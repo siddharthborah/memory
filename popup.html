@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Content Saver</title>
+    <style>
+        body {
+            width: 300px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #savedPages {
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .page-item {
+            border: 1px solid #ddd;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .page-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .page-url {
+            color: #666;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <button id="savePage">Save Current Page</button>
+    <button id="viewSaved">View Saved Pages</button>
+    <div id="savedPages"></div>
+    <script src="popup.js"></script>
+</body>
+</html> 
