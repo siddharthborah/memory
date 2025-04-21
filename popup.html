@@ -6,7 +6,9 @@
         body {
             width: 300px;
             padding: 10px;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            position: relative;
+            min-height: 100px;
         }
         button {
             width: 100%;
@@ -17,6 +19,8 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
         }
         button:hover {
             background-color: #45a049;
@@ -41,12 +45,46 @@
             font-size: 0.9em;
             word-break: break-all;
         }
+        /* Toast styles */
+        .toast-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .toast.success {
+            background-color: #4CAF50;
+        }
+        .toast.error {
+            background-color: #f44336;
+        }
     </style>
 </head>
 <body>
     <button id="savePage">Save Current Page</button>
     <button id="viewSaved">View Saved Pages</button>
     <div id="savedPages"></div>
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="toast.js"></script>
     <script src="popup.js"></script>
 </body>
 </html> 

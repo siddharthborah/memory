@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                     </svg>
                 </button>
-                <div class="page-title">${page.title}</div>
+                <div class="page-header">
+                    <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
+                    <div class="page-title">${page.title}</div>
+                </div>
                 <div class="page-url">${page.url}</div>
                 <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
                 <div class="page-content">${page.content.substring(0, 200)}...</div>
@@ -104,6 +107,21 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             displayPages(filteredPages);
         });
+    });
+
+    // Listen for storage changes
+    chrome.storage.onChanged.addListener(function(changes, namespace) {
+        if (namespace === 'local' && changes.savedPages) {
+            loadSavedPages();
+        }
+    });
+
+    // Periodic refresh (every 5 seconds)
+    const refreshInterval = setInterval(loadSavedPages, 5000);
+
+    // Clean up interval when page is unloaded
+    window.addEventListener('unload', function() {
+        clearInterval(refreshInterval);
     });
     
     // Initial load

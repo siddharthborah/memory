@@ -107,12 +107,28 @@
             box-shadow: var(--shadow-lg);
         }
 
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-favicon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
         .page-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: var(--text-primary);
             margin: 0;
             padding-right: 2rem;
+            flex: 1;
         }
 
         .page-url {

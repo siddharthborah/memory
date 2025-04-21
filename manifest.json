@@ -5,7 +5,8 @@
   "description": "Captures webpage URLs and text content, storing them in local storage",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "action": {
     "default_popup": "popup.html",

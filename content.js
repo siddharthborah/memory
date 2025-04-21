@@ -12,11 +12,22 @@ function getPageContent() {
     // Get the timestamp
     const timestamp = new Date().toISOString();
     
+    // Get favicon URL
+    let faviconUrl = '';
+    const faviconLink = document.querySelector("link[rel*='icon']");
+    if (faviconLink) {
+        faviconUrl = faviconLink.href;
+    } else {
+        // Fallback to default favicon location
+        faviconUrl = new URL('/favicon.ico', url).href;
+    }
+    
     return {
         url: url,
         title: title,
         content: bodyText,
-        timestamp: timestamp
+        timestamp: timestamp,
+        favicon: faviconUrl
     };
 }
 
