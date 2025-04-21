@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="page-url">${page.url}</div>
                 <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
-                <div class="page-content">${(page.textContent || '').substring(0, 200)}...</div>
+                <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
             </div>
         `).join('');
     }
@@ -103,7 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const filteredPages = savedPages.filter(page => 
                 page.title.toLowerCase().includes(searchTerm) ||
                 page.url.toLowerCase().includes(searchTerm) ||
-                (page.textContent && page.textContent.toLowerCase().includes(searchTerm))
+                (page.textContent && page.textContent.toLowerCase().includes(searchTerm)) ||
+                (page.excerpt && page.excerpt.toLowerCase().includes(searchTerm))
             );
             displayPages(filteredPages);
         });

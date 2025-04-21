@@ -55,9 +55,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             
             // Get the main content using Readability
             let articleContent = '';
+            let excerpt = '';
             try {
                 const article = new Readability(docClone).parse();
-                if (article && article.textContent) {
+                if (article) {
+                    // Get the excerpt
+                    excerpt = article.excerpt || '';
+                    
                     // Clean up the text content while preserving meaningful whitespace
                     articleContent = article.textContent
                         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
@@ -79,6 +83,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     .replace(/([a-z])([0-9])/g, '$1 $2')
                     .replace(/([0-9])([A-Z])/g, '$1 $2')
                     .trim();
+                
+                // Create a basic excerpt from the first paragraph
+                const firstParagraph = docClone.body.querySelector('p');
+                excerpt = firstParagraph ? firstParagraph.textContent.trim() : '';
             }
             
             // Send back basic page information
@@ -86,6 +94,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 url: window.location.href,
                 title: title,
                 textContent: articleContent,
+                excerpt: excerpt,
                 timestamp: new Date().toISOString(),
                 favicon: faviconUrl
             });
@@ -104,6 +113,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     .replace(/([a-z])([0-9])/g, '$1 $2')
                     .replace(/([0-9])([A-Z])/g, '$1 $2')
                     .trim(),
+                excerpt: document.body.querySelector('p')?.textContent.trim() || '',
                 timestamp: new Date().toISOString(),
                 favicon: ''
             });
