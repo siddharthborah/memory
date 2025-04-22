@@ -27,6 +27,10 @@ npm install
 ```bash
 npm run build
 ```
+The build process will automatically:
+- Copy required WebAssembly (WASM) files from the transformers package
+- Bundle all assets and dependencies
+- Create the distribution in the `dist` directory
 
 4. Load the extension in Chrome
 - Open Chrome and navigate to `chrome://extensions/`
@@ -35,7 +39,7 @@ npm run build
 
 ## Development
 
-- `npm run build`: Build the extension
+- `npm run build`: Build the extension (automatically handles WASM files)
 - `npm run watch`: Build and watch for changes
 - `npm run clean`: Clean the build directory
 
@@ -52,9 +56,18 @@ npm run build
 
 The extension uses:
 - Semantic search powered by MiniLM-L6-v2
-- WebAssembly for efficient model inference
+- WebAssembly (WASM) for efficient model inference
+  - Uses ONNX Runtime for model execution
+  - Automatically bundles required WASM files during build
 - Chrome Storage API for persistence
 - Webpack for bundling
+
+## Troubleshooting
+
+If you encounter any issues with the build:
+1. Make sure all dependencies are installed: `npm install`
+2. Check that the WASM files are present in the root directory after building
+3. If WASM files are missing, you can manually copy them: `node copy-wasm.js`
 
 ## License
 

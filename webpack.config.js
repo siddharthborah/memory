@@ -1,5 +1,14 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const { execSync } = require('child_process');
+
+// Copy WASM files before webpack runs
+try {
+    execSync('node copy-wasm.js', { stdio: 'inherit' });
+} catch (error) {
+    console.error('Failed to copy WASM files:', error);
+    process.exit(1);
+}
 
 module.exports = {
     mode: 'production',
