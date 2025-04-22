@@ -123,18 +123,10 @@ function saveCurrentPage(callback) {
 
 // Create context menu items
 chrome.runtime.onInstalled.addListener(() => {
-    // Create a parent menu for Memory
-    chrome.contextMenus.create({
-        id: 'memory',
-        title: 'Memory',
-        contexts: ['page']
-    });
-
     // Regular page save
     chrome.contextMenus.create({
         id: 'savePage',
-        title: 'Save page',
-        parentId: 'memory',
+        title: 'Save page    ⌘M',
         contexts: ['page']
     });
 
@@ -142,7 +134,6 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: 'saveTweet',
         title: 'Save tweet',
-        parentId: 'memory',
         contexts: ['page'],
         documentUrlPatterns: ['*://twitter.com/*', '*://x.com/*']
     });

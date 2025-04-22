@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Page Content Saver</title>
     <style>
         body {
-            width: 300px;
+            width: 220px;
             padding: 10px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             position: relative;
@@ -12,7 +13,7 @@
         }
         button {
             width: 100%;
-            padding: 8px;
+            padding: 8px 40px 8px 8px;
             margin: 5px 0;
             background-color: #4CAF50;
             color: white;
@@ -21,9 +22,23 @@
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.2s;
+            text-align: left;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         button:hover {
             background-color: #45a049;
+        }
+        .shortcut {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            padding-left: 8px;
         }
         #savedPages {
             margin-top: 10px;
@@ -80,8 +95,8 @@
     </style>
 </head>
 <body>
-    <button id="savePage">Save Current Page</button>
-    <button id="viewSaved">View Saved Pages</button>
+    <button id="savePage">Save Current Page<span class="shortcut">&#8984;M</span></button>
+    <button id="viewSaved">View Saved Pages<span class="shortcut">&#8984;J</span></button>
     <div id="savedPages"></div>
     <div class="toast-container" id="toastContainer"></div>
     <script src="toast.js"></script>
