@@ -1,20 +1,36 @@
+import { storePageEmbedding, semanticSearch, clearEmbeddings } from './embeddings.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     const pageList = document.getElementById('pageList');
     const searchBox = document.getElementById('searchBox');
     const clearAllBtn = document.getElementById('clearAll');
     
     // Load saved pages
-    function loadSavedPages() {
-        chrome.storage.local.get(['savedPages'], function(result) {
+    async function loadSavedPages() {
+        try {
+            const result = await chrome.storage.local.get(['savedPages']);
             const savedPages = result.savedPages || [];
+            
             // Add unique ID to each page if it doesn't have one
             savedPages.forEach((page, index) => {
                 if (!page.id) {
                     page.id = 'page_' + Date.now() + '_' + index;
                 }
             });
+            
+            // Generate embeddings for all pages
+            for (const page of savedPages) {
+                const text = page.excerpt || page.textContent || '';
+                if (text) {
+                    await storePageEmbedding(page.id, text);
+                }
+            }
+            
             displayPages(savedPages);
-        });
+        } catch (error) {
+            console.error('Error loading saved pages:', error);
+            displayPages([]);
+        }
     }
     
     // Display pages in the grid
@@ -24,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        pageList.innerHTML = pages.map((page) => `
+        pageList.innerHTML = pages.map(page => `
             <div class="page-card" data-url="${page.url}">
                 <button class="delete-btn" data-page-id="${page.id}" title="Delete page">
                     <svg class="delete-icon" viewBox="0 0 24 24">
@@ -66,48 +82,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Delete a page
-    function deletePage(pageId) {
-        console.log('Deleting page with ID:', pageId);
-        chrome.storage.local.get(['savedPages'], function(result) {
+    async function deletePage(pageId) {
+        try {
+            const result = await chrome.storage.local.get(['savedPages']);
             const savedPages = result.savedPages || [];
-            console.log('Current saved pages:', savedPages);
+            const updatedPages = savedPages.filter(page => page.id !== pageId);
             
-            const updatedPages = savedPages.filter(page => {
-                console.log('Comparing:', page.id, 'with', pageId);
-                return page.id !== pageId;
-            });
-            
-            console.log('Updated pages:', updatedPages);
-            
-            chrome.storage.local.set({savedPages: updatedPages}, function() {
-                console.log('Storage updated');
-                loadSavedPages();
-            });
-        });
+            await chrome.storage.local.set({savedPages: updatedPages});
+            await loadSavedPages();
+        } catch (error) {
+            console.error('Error deleting page:', error);
+        }
     }
     
     // Clear all pages
-    clearAllBtn.addEventListener('click', function() {
+    clearAllBtn.addEventListener('click', async function() {
         if (confirm('Are you sure you want to delete all saved pages? This action cannot be undone.')) {
-            chrome.storage.local.set({savedPages: []}, function() {
-                loadSavedPages();
-            });
+            try {
+                await chrome.storage.local.set({savedPages: []});
+                await clearEmbeddings();
+                await loadSavedPages();
+            } catch (error) {
+                console.error('Error clearing pages:', error);
+            }
         }
     });
     
     // Search functionality
+    let searchTimeout;
     searchBox.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        chrome.storage.local.get(['savedPages'], function(result) {
-            const savedPages = result.savedPages || [];
-            const filteredPages = savedPages.filter(page => 
-                page.title.toLowerCase().includes(searchTerm) ||
-                page.url.toLowerCase().includes(searchTerm) ||
-                (page.textContent && page.textContent.toLowerCase().includes(searchTerm)) ||
-                (page.excerpt && page.excerpt.toLowerCase().includes(searchTerm))
-            );
-            displayPages(filteredPages);
-        });
+        
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        // Set new timeout for search
+        searchTimeout = setTimeout(async () => {
+            try {
+                if (searchTerm.length < 3) {
+                    // If search term is too short, show all pages
+                    const result = await chrome.storage.local.get(['savedPages']);
+                    displayPages(result.savedPages || []);
+                    return;
+                }
+                
+                // Perform semantic search
+                const result = await chrome.storage.local.get(['savedPages']);
+                const savedPages = result.savedPages || [];
+                const results = await semanticSearch(searchTerm, savedPages);
+                
+                // Display results
+                if (results.length > 0) {
+                    displayPages(results.map(r => r.page));
+                } else {
+                    // Fallback to text search if no semantic results
+                    const filteredPages = savedPages.filter(page => 
+                        page.title.toLowerCase().includes(searchTerm) ||
+                        page.url.toLowerCase().includes(searchTerm) ||
+                        (page.textContent && page.textContent.toLowerCase().includes(searchTerm)) ||
+                        (page.excerpt && page.excerpt.toLowerCase().includes(searchTerm))
+                    );
+                    displayPages(filteredPages);
+                }
+            } catch (error) {
+                console.error('Error performing search:', error);
+                displayPages([]);
+            }
+        }, 300); // Debounce search for 300ms
     });
 
     // Listen for storage changes
@@ -117,14 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Periodic refresh (every 5 seconds)
-    const refreshInterval = setInterval(loadSavedPages, 5000);
-
-    // Clean up interval when page is unloaded
-    window.addEventListener('unload', function() {
-        clearInterval(refreshInterval);
-    });
-    
     // Initial load
     loadSavedPages();
 }); 

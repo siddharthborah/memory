@@ -2,11 +2,12 @@
   "manifest_version": 3,
   "name": "Page Content Saver",
   "version": "1.0",
-  "description": "Captures webpage URLs and text content, storing them in local storage",
+  "description": "Save and search web page content with semantic search",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "commands"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -18,7 +19,8 @@
   },
   "options_page": "options.html",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "commands": {
     "save-current-page": {
@@ -41,5 +43,22 @@
       "matches": ["<all_urls>"],
       "js": ["readability.js", "content.js"]
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "*.wasm",
+        "tokenizer.js",
+        "embeddings.js",
+        "models/*",
+        "ort-wasm.wasm",
+        "ort-wasm-simd.wasm",
+        "ort-wasm-threaded.wasm"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
 }
