@@ -81,7 +81,7 @@ chrome.commands.onCommand.addListener((command) => {
                                     }, 300);
                                 }, 1500);
                             },
-                            args: ['Page saved successfully!']
+                            args: ['Added to memory']
                         });
                     }
                 });
@@ -126,14 +126,14 @@ chrome.runtime.onInstalled.addListener(() => {
     // Regular page save
     chrome.contextMenus.create({
         id: 'savePage',
-        title: 'Save page    ⌘M',
+        title: 'Remember Page    ⌘M',
         contexts: ['page']
     });
 
     // Tweet save
     chrome.contextMenus.create({
         id: 'saveTweet',
-        title: 'Save tweet',
+        title: 'Remember Tweet',
         contexts: ['page'],
         documentUrlPatterns: ['*://twitter.com/*', '*://x.com/*']
     });
@@ -312,7 +312,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                             }, 300);
                         }, 1500);
                     },
-                    args: ['Tweet saved successfully!', 'success']
+                    args: ['Added to memory', 'success']
                 });
             }
         } catch (error) {
@@ -376,7 +376,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                         }, 300);
                     }, 1500);
                 },
-                args: ['Failed to save tweet. Please try again.', 'error']
+                args: ['Failed to add tweet to memory. Please try again.', 'error']
             });
         }
     } else if (info.menuItemId === 'savePage') {
@@ -484,7 +484,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                             }, 300);
                         }, 1500);
                     },
-                    args: ['Page saved successfully!', 'success']
+                    args: ['Added to memory', 'success']
                 });
             }
         } catch (error) {
@@ -548,7 +548,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                         }, 300);
                     }, 1500);
                 },
-                args: ['Error saving page', 'error']
+                args: ['Error adding page to memory', 'error']
             });
         }
     }

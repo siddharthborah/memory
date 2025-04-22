@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </svg>
                                         </button>
                                         <div class="tweet-header">
-                                            <img class="tweet-avatar" src="${page.favicon}" alt="Twitter">
+                                            <img class="tweet-avatar" src="https://x.com/favicon.ico" alt="X">
                                             <div class="tweet-author">
                                                 <div class="tweet-name">${page.author}</div>
                                                 <div class="tweet-handle">${page.handle}</div>
@@ -148,13 +148,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                                             </svg>
                                         </button>
-                                        <div class="page-header">
-                                            <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
-                                            <div class="page-title">${page.title}</div>
+                                        <div class="page-content-wrapper">
+                                            <div class="page-header">
+                                                <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
+                                                <div class="page-title">${page.title}</div>
+                                            </div>
+                                            <div class="page-url">${page.url}</div>
+                                            <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
                                         </div>
-                                        <div class="page-url">${page.url}</div>
                                         <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
-                                        <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
                                     </div>
                                 `;
                             }

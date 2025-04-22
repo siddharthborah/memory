@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Saved Pages</title>
+    <title>Memories</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -56,6 +56,8 @@
             position: relative;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
         }
         
         .page-card:hover {
@@ -87,8 +89,9 @@
         
         .page-header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 12px;
+            flex: 1;
         }
         
         .page-favicon {
@@ -97,12 +100,28 @@
             margin-right: 8px;
         }
         
+        .tweet-avatar {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+        }
+        
+        .page-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
         .page-title {
             font-weight: 600;
             font-size: 16px;
             color: #333;
             margin: 0;
             flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 32px;
         }
         
         .page-url {
@@ -112,24 +131,28 @@
             word-break: break-all;
         }
         
-        .page-timestamp {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 8px;
-        }
-        
         .page-excerpt {
             font-size: 14px;
             color: #444;
             margin-bottom: 12px;
             font-style: italic;
             line-height: 1.4;
+            flex: 1;
+        }
+        
+        .page-timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
         }
         
         .page-content {
             font-size: 14px;
             color: #666;
             line-height: 1.5;
+            margin-bottom: 12px;
         }
         
         .no-pages {
@@ -274,13 +297,6 @@
             margin-bottom: 12px;
         }
 
-        .tweet-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            margin-right: 12px;
-        }
-
         .tweet-author {
             flex: 1;
         }
@@ -324,8 +340,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <input type="text" id="searchBox" class="search-box" placeholder="Search saved pages...">
-            <button id="clearAll" class="clear-all">Clear All</button>
+            <input type="text" id="searchBox" class="search-box" placeholder="Find in memories...">
+            <button id="clearAll" class="clear-all">Forget All</button>
         </div>
         <div id="pageList" class="page-list"></div>
         
