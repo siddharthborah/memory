@@ -45,9 +45,7 @@
         }
         
         .page-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            display: block;
         }
         
         .page-card {
@@ -233,6 +231,25 @@
             to {
                 transform: rotate(360deg);
             }
+        }
+
+        /* Time groups */
+        .time-group {
+            margin-bottom: 30px;
+        }
+
+        .time-group-title {
+            font-size: 18px;
+            color: #333;
+            margin: 0 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .time-group-pages {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
     </style>
 </head>

@@ -58,23 +58,94 @@ document.addEventListener('DOMContentLoaded', function() {
             pageList.innerHTML = '<div class="no-pages">No pages saved yet.</div>';
             return;
         }
+
+        // Sort pages by timestamp (newest first)
+        pages.sort((a, b) => b.timestamp - a.timestamp);
+
+        // Group pages by time period
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const thisWeek = new Date(today);
+        thisWeek.setDate(today.getDate() - today.getDay());
+        const lastWeek = new Date(thisWeek);
+        lastWeek.setDate(thisWeek.getDate() - 7);
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        const groups = {
+            today: [],
+            thisWeek: [],
+            lastWeek: [],
+            thisMonth: [],
+            lastMonth: [],
+            older: []
+        };
+
+        // Categorize pages
+        pages.forEach(page => {
+            const pageDate = new Date(page.timestamp);
+            if (pageDate >= today) {
+                groups.today.push(page);
+            } else if (pageDate >= thisWeek) {
+                groups.thisWeek.push(page);
+            } else if (pageDate >= lastWeek) {
+                groups.lastWeek.push(page);
+            } else if (pageDate >= thisMonth) {
+                groups.thisMonth.push(page);
+            } else if (pageDate >= lastMonth) {
+                groups.lastMonth.push(page);
+            } else {
+                groups.older.push(page);
+            }
+        });
+
+        // Generate HTML for each group
+        let html = '';
         
-        pageList.innerHTML = pages.map(page => `
-            <div class="page-card" data-url="${page.url}">
-                <button class="delete-btn" data-page-id="${page.id}" title="Delete page">
-                    <svg class="delete-icon" viewBox="0 0 24 24">
-                        <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
-                    </svg>
-                </button>
-                <div class="page-header">
-                    <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
-                    <div class="page-title">${page.title}</div>
+        // Helper function to create group HTML
+        function createGroupHtml(groupName, pages) {
+            if (pages.length === 0) return '';
+            
+            const groupTitles = {
+                today: 'Today',
+                thisWeek: 'This Week',
+                lastWeek: 'Last Week',
+                thisMonth: 'This Month',
+                lastMonth: 'Last Month',
+                older: 'Older'
+            };
+
+            return `
+                <div class="time-group">
+                    <h2 class="time-group-title">${groupTitles[groupName]}</h2>
+                    <div class="time-group-pages">
+                        ${pages.map(page => `
+                            <div class="page-card" data-url="${page.url}">
+                                <button class="delete-btn" data-page-id="${page.id}" title="Delete page">
+                                    <svg class="delete-icon" viewBox="0 0 24 24">
+                                        <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                    </svg>
+                                </button>
+                                <div class="page-header">
+                                    <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
+                                    <div class="page-title">${page.title}</div>
+                                </div>
+                                <div class="page-url">${page.url}</div>
+                                <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
+                                <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                <div class="page-url">${page.url}</div>
-                <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
-                <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
-            </div>
-        `).join('');
+            `;
+        }
+
+        // Add each group to the HTML
+        Object.keys(groups).forEach(groupName => {
+            html += createGroupHtml(groupName, groups[groupName]);
+        });
+
+        pageList.innerHTML = html;
     }
     
     // Event delegation for page actions
