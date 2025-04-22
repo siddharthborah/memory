@@ -82,9 +82,9 @@ document.addEventListener('DOMContentLoaded', function() {
     savePageButton.addEventListener('click', function() {
         chrome.runtime.sendMessage({action: "savePage"}, function(response) {
             if (response && response.success) {
-                showToastInPage('Page saved successfully!', 'success');
+                showToast('Page saved successfully!', 'success');
             } else {
-                showToastInPage('Failed to save page. Please try again.', 'error');
+                showToast('Failed to save page. Please try again.', 'error');
             }
         });
     });

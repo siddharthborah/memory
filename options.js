@@ -119,22 +119,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="time-group">
                     <h2 class="time-group-title">${groupTitles[groupName]}</h2>
                     <div class="time-group-pages">
-                        ${pages.map(page => `
-                            <div class="page-card" data-url="${page.url}">
-                                <button class="delete-btn" data-page-id="${page.id}" title="Delete page">
-                                    <svg class="delete-icon" viewBox="0 0 24 24">
-                                        <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
-                                    </svg>
-                                </button>
-                                <div class="page-header">
-                                    <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
-                                    <div class="page-title">${page.title}</div>
-                                </div>
-                                <div class="page-url">${page.url}</div>
-                                <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
-                                <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
-                            </div>
-                        `).join('')}
+                        ${pages.map(page => {
+                            if (page.type === 'tweet') {
+                                return `
+                                    <div class="page-card tweet-card" data-url="${page.url}">
+                                        <button class="delete-btn" data-page-id="${page.id}" title="Delete tweet">
+                                            <svg class="delete-icon" viewBox="0 0 24 24">
+                                                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                            </svg>
+                                        </button>
+                                        <div class="tweet-header">
+                                            <img class="tweet-avatar" src="${page.favicon}" alt="Twitter">
+                                            <div class="tweet-author">
+                                                <div class="tweet-name">${page.author}</div>
+                                                <div class="tweet-handle">${page.handle}</div>
+                                            </div>
+                                        </div>
+                                        <div class="tweet-content">${page.textContent}</div>
+                                        ${page.mediaUrl ? `<img class="tweet-media" src="${page.mediaUrl}" alt="Tweet media">` : ''}
+                                        <div class="tweet-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <div class="page-card" data-url="${page.url}">
+                                        <button class="delete-btn" data-page-id="${page.id}" title="Delete page">
+                                            <svg class="delete-icon" viewBox="0 0 24 24">
+                                                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                            </svg>
+                                        </button>
+                                        <div class="page-header">
+                                            <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
+                                            <div class="page-title">${page.title}</div>
+                                        </div>
+                                        <div class="page-url">${page.url}</div>
+                                        <div class="page-timestamp">${new Date(page.timestamp).toLocaleString()}</div>
+                                        <div class="page-excerpt">${page.excerpt || page.textContent || ''}</div>
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
                     </div>
                 </div>
             `;
