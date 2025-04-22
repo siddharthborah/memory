@@ -145,21 +145,48 @@ async function semanticSearch(query, pages, topK = 5) {
     }
 
     try {
+        console.log('Starting semantic search with query:', query);
+        console.log('Number of pages to search:', pages.length);
+        
         const queryEmbedding = await generateEmbedding(query);
+        console.log('Generated query embedding:', queryEmbedding);
+        
         const results = [];
         
-        for (const [pageId, pageEmbedding] of embeddings.entries()) {
-            const similarity = cosineSimilarity(queryEmbedding, pageEmbedding);
-            const page = pages.find(p => p.id === pageId);
-            if (page) {
-                results.push({ pageId, similarity, page });
+        // Generate embeddings for all pages if not already stored
+        for (const page of pages) {
+            if (!page.id) {
+                console.error('Page missing ID:', page);
+                continue;
+            }
+            
+            const text = page.excerpt || page.textContent || '';
+            if (text) {
+                let pageEmbedding;
+                if (embeddings.has(page.id)) {
+                    console.log('Using stored embedding for page:', page.id);
+                    pageEmbedding = embeddings.get(page.id);
+                } else {
+                    console.log('Generating new embedding for page:', page.id);
+                    pageEmbedding = await generateEmbedding(text);
+                    embeddings.set(page.id, pageEmbedding);
+                }
+                
+                const similarity = cosineSimilarity(queryEmbedding, pageEmbedding);
+                console.log(`Similarity for page ${page.id}:`, similarity);
+                results.push({ pageId: page.id, similarity, page });
             }
         }
         
-        return results
+        // Sort by similarity and filter
+        const filteredResults = results
             .sort((a, b) => b.similarity - a.similarity)
             .slice(0, topK)
-            .filter(result => result.similarity > 0.3);
+            .filter(result => result.similarity > 0.1);
+        
+        console.log('Final filtered results:', filteredResults);
+        
+        return filteredResults;
     } catch (error) {
         console.error('Error in semantic search:', error);
         return [];
@@ -175,9 +202,12 @@ async function clearEmbeddings() {
 // Initialize embeddings on load
 loadEmbeddings();
 
-// Export functions
+// Export functions and Map
 export {
-    storePageEmbedding,
+    generateEmbedding,
+    cosineSimilarity,
     semanticSearch,
-    clearEmbeddings
+    storePageEmbedding,
+    clearEmbeddings,
+    embeddings
 }; 

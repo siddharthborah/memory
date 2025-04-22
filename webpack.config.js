@@ -7,7 +7,9 @@ module.exports = {
         options: './options.js',
         background: './background.js',
         content: './content.js',
-        popup: './popup.js'
+        popup: './popup.js',
+        'test-embeddings': './test-embeddings.js',
+        'url-params': './url-params.js'
     },
     output: {
         path: path.resolve(__dirname, 'dist'),

@@ -140,6 +140,74 @@
             padding: 40px;
             font-size: 16px;
         }
+
+        /* Test controls */
+        .test-controls {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none; /* Hidden by default */
+        }
+
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .test-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Debug panel */
+        .debug-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+
+        .debug-panel h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .similarity-list {
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .similarity-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .similarity-item:last-child {
+            border-bottom: none;
+        }
+
+        .similarity-score {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .debug-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -149,7 +217,26 @@
             <button id="clearAll" class="clear-all">Clear All</button>
         </div>
         <div id="pageList" class="page-list"></div>
+        
+        <!-- Test controls -->
+        <div id="testControls" class="test-controls">
+            <h3>Embedding Tests</h3>
+            <button id="runTests" class="test-button">Run Embedding Tests</button>
+            <p>Open the console (F12) to see test results</p>
+        </div>
+
+        <!-- Debug panel -->
+        <div id="debugPanel" class="debug-panel">
+            <h3>Search Debug Info</h3>
+            <div id="similarityList" class="similarity-list"></div>
+            <div class="debug-info">
+                <p>Showing similarity scores for current search term</p>
+                <p>Threshold: 0.1</p>
+            </div>
+        </div>
     </div>
     <script type="module" src="options.js"></script>
+    <script type="module" src="test-embeddings.js"></script>
+    <script type="module" src="url-params.js"></script>
 </body>
 </html> 

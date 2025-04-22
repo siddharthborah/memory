@@ -1,9 +1,11 @@
-import { storePageEmbedding, semanticSearch, clearEmbeddings } from './embeddings.js';
+import { storePageEmbedding, semanticSearch, clearEmbeddings, generateEmbedding, cosineSimilarity } from './embeddings.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     const pageList = document.getElementById('pageList');
     const searchBox = document.getElementById('searchBox');
     const clearAllBtn = document.getElementById('clearAll');
+    const similarityList = document.getElementById('similarityList');
+    const debugPanel = document.getElementById('debugPanel');
     
     // Load saved pages
     async function loadSavedPages() {
@@ -12,11 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const savedPages = result.savedPages || [];
             
             // Add unique ID to each page if it doesn't have one
+            let needsUpdate = false;
             savedPages.forEach((page, index) => {
                 if (!page.id) {
                     page.id = 'page_' + Date.now() + '_' + index;
+                    needsUpdate = true;
                 }
             });
+            
+            // Save updated pages back to storage if IDs were added
+            if (needsUpdate) {
+                await chrome.storage.local.set({ savedPages });
+            }
             
             // Generate embeddings for all pages
             for (const page of savedPages) {
@@ -108,10 +117,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Update debug panel with similarity scores
+    async function updateDebugPanel(searchTerm, pages) {
+        if (!debugPanel.style.display || debugPanel.style.display === 'none') {
+            return;
+        }
+
+        try {
+            const queryEmbedding = await generateEmbedding(searchTerm);
+            const similarities = [];
+            
+            for (const page of pages) {
+                const text = page.excerpt || page.textContent || '';
+                if (text) {
+                    const embedding = await generateEmbedding(text);
+                    const similarity = cosineSimilarity(queryEmbedding, embedding);
+                    similarities.push({ page, similarity });
+                }
+            }
+            
+            // Sort by similarity
+            similarities.sort((a, b) => b.similarity - a.similarity);
+            
+            // Update debug panel
+            similarityList.innerHTML = similarities.map(({ page, similarity }) => `
+                <div class="similarity-item">
+                    <div class="similarity-text">${page.title.substring(0, 50)}...</div>
+                    <div class="similarity-score">${similarity.toFixed(4)}</div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error updating debug panel:', error);
+            similarityList.innerHTML = '<div class="similarity-item">Error calculating similarities</div>';
+        }
+    }
+    
     // Search functionality
     let searchTimeout;
     searchBox.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
+        console.log('Search term:', searchTerm);
         
         // Clear previous timeout
         if (searchTimeout) {
@@ -122,35 +167,43 @@ document.addEventListener('DOMContentLoaded', function() {
         searchTimeout = setTimeout(async () => {
             try {
                 if (searchTerm.length < 3) {
+                    console.log('Search term too short, showing all pages');
                     // If search term is too short, show all pages
                     const result = await chrome.storage.local.get(['savedPages']);
-                    displayPages(result.savedPages || []);
+                    const pages = result.savedPages || [];
+                    console.log('Number of saved pages:', pages.length);
+                    displayPages(pages);
+                    updateDebugPanel(searchTerm, pages);
                     return;
                 }
                 
-                // Perform semantic search
+                // Get all pages
                 const result = await chrome.storage.local.get(['savedPages']);
                 const savedPages = result.savedPages || [];
+                console.log('Number of pages to search:', savedPages.length);
+                
+                // Update debug panel
+                updateDebugPanel(searchTerm, savedPages);
+                
+                // Perform semantic search only
+                console.log('Starting semantic search...');
                 const results = await semanticSearch(searchTerm, savedPages);
+                console.log('Semantic search results:', results);
                 
                 // Display results
                 if (results.length > 0) {
+                    console.log('Displaying', results.length, 'results');
                     displayPages(results.map(r => r.page));
                 } else {
-                    // Fallback to text search if no semantic results
-                    const filteredPages = savedPages.filter(page => 
-                        page.title.toLowerCase().includes(searchTerm) ||
-                        page.url.toLowerCase().includes(searchTerm) ||
-                        (page.textContent && page.textContent.toLowerCase().includes(searchTerm)) ||
-                        (page.excerpt && page.excerpt.toLowerCase().includes(searchTerm))
-                    );
-                    displayPages(filteredPages);
+                    console.log('No results found');
+                    displayPages([]);
                 }
+                
             } catch (error) {
                 console.error('Error performing search:', error);
                 displayPages([]);
             }
-        }, 300); // Debounce search for 300ms
+        }, 300);
     });
 
     // Listen for storage changes
