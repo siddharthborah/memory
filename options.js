@@ -1,4 +1,5 @@
 import { storePageEmbedding, semanticSearch, clearEmbeddings, clearEmbedding, generateEmbedding, cosineSimilarity } from './embeddings.js';
+import { SEMANTIC_SIMILARITY_THRESHOLD } from './constants.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     const pageList = document.getElementById('pageList');
@@ -245,10 +246,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             for (const page of pages) {
                 const text = page.excerpt || page.textContent || '';
+                const title = page.title?.toLowerCase() || '';
+                const content = page.textContent?.toLowerCase() || '';
+                const excerpt = page.excerpt?.toLowerCase() || '';
+                const url = page.url?.toLowerCase() || '';
+                
+                // Check for text match
+                const hasTextMatch = title.includes(searchTerm) || 
+                                   content.includes(searchTerm) || 
+                                   excerpt.includes(searchTerm) || 
+                                   url.includes(searchTerm);
+
                 if (text) {
                     const embedding = await generateEmbedding(text);
                     const similarity = cosineSimilarity(queryEmbedding, embedding);
-                    similarities.push({ page, similarity });
+                    similarities.push({ page, similarity, hasTextMatch });
                 }
             }
             
@@ -256,12 +268,21 @@ document.addEventListener('DOMContentLoaded', function() {
             similarities.sort((a, b) => b.similarity - a.similarity);
             
             // Update debug panel
-            similarityList.innerHTML = similarities.map(({ page, similarity }) => `
+            similarityList.innerHTML = similarities.map(({ page, similarity, hasTextMatch }) => `
                 <div class="similarity-item">
-                    <div class="similarity-text">${page.title.substring(0, 50)}...</div>
-                    <div class="similarity-score">${similarity.toFixed(4)}</div>
+                    <div class="similarity-text ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${page.title.substring(0, 50)}...</div>
+                    <div class="similarity-info">
+                        <span class="text-match ${hasTextMatch ? 'match' : 'no-match'}">${hasTextMatch ? '✓' : '✗'}</span>
+                        <span class="similarity-score ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${similarity.toFixed(4)}</span>
+                    </div>
                 </div>
             `).join('');
+
+            // Update threshold info in debug panel
+            document.querySelector('.debug-info').innerHTML = `
+                <p>Showing similarity scores for current search term</p>
+                <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
+            `;
         } catch (error) {
             console.error('Error updating debug panel:', error);
             similarityList.innerHTML = '<div class="similarity-item">Error calculating similarities</div>';
@@ -301,15 +322,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update debug panel
                 updateDebugPanel(searchTerm, savedPages);
                 
-                // Perform semantic search only
-                console.log('Starting semantic search...');
-                const results = await semanticSearch(searchTerm, savedPages);
-                console.log('Semantic search results:', results);
+                // Perform text-based search
+                const textResults = savedPages.filter(page => {
+                    const title = page.title?.toLowerCase() || '';
+                    const content = page.textContent?.toLowerCase() || '';
+                    const excerpt = page.excerpt?.toLowerCase() || '';
+                    const url = page.url?.toLowerCase() || '';
+                    return title.includes(searchTerm) || 
+                           content.includes(searchTerm) || 
+                           excerpt.includes(searchTerm) || 
+                           url.includes(searchTerm);
+                });
+
+                console.log('Text search found', textResults.length, 'results');
+                
+                // Perform semantic search
+                console.log('Performing semantic search...');
+                const semanticResults = await semanticSearch(searchTerm, savedPages);
+                console.log('Semantic search results:', semanticResults.length);
+
+                // Combine and rank results
+                const allResults = new Map();
+
+                // Add text matches first with a high base score
+                textResults.forEach(page => {
+                    allResults.set(page.id, {
+                        page,
+                        score: 1.0, // Base score for text match
+                        hasTextMatch: true,
+                        semanticScore: 0
+                    });
+                });
+
+                // Add or update with semantic results
+                semanticResults.forEach(({page, score}) => {
+                    if (allResults.has(page.id)) {
+                        // If it's also a text match, boost the score
+                        const existing = allResults.get(page.id);
+                        existing.semanticScore = score;
+                        existing.score = existing.score + score; // Combine scores
+                    } else {
+                        // If it's only a semantic match
+                        allResults.set(page.id, {
+                            page,
+                            score: score,
+                            hasTextMatch: false,
+                            semanticScore: score
+                        });
+                    }
+                });
+
+                // Convert to array and sort by combined score
+                const combinedResults = Array.from(allResults.values())
+                    .sort((a, b) => b.score - a.score);
+
+                console.log('Combined results:', combinedResults.length);
                 
                 // Display results
-                if (results.length > 0) {
-                    console.log('Displaying', results.length, 'results');
-                    displayPages(results.map(r => r.page));
+                if (combinedResults.length > 0) {
+                    console.log('Displaying combined results');
+                    displayPages(combinedResults.map(r => r.page));
                 } else {
                     console.log('No results found');
                     displayPages([]);

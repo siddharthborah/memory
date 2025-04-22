@@ -1,4 +1,5 @@
 import { pipeline, env } from '@xenova/transformers';
+import { SEMANTIC_SIMILARITY_THRESHOLD } from './constants.js';
 
 // Configure environment for Chrome extension
 env.useBrowserCache = false;
@@ -182,7 +183,7 @@ async function semanticSearch(query, pages, topK = 5) {
         const filteredResults = results
             .sort((a, b) => b.similarity - a.similarity)
             .slice(0, topK)
-            .filter(result => result.similarity > 0.1);
+            .filter(result => result.similarity > SEMANTIC_SIMILARITY_THRESHOLD);
         
         console.log('Final filtered results:', filteredResults);
         

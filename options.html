@@ -219,9 +219,32 @@
             border-bottom: none;
         }
 
+        .similarity-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .text-match {
+            font-family: monospace;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .text-match.match {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .text-match.no-match {
+            background-color: #f44336;
+            color: white;
+        }
+
         .similarity-score {
             font-weight: bold;
-            color: #4CAF50;
+            color: #666;
         }
 
         .debug-info {
@@ -334,6 +357,21 @@
         /* Adjust page list for time groups */
         .page-list {
             display: block;
+        }
+
+        .similarity-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .similarity-text.above-threshold {
+            font-weight: bold;
+        }
+
+        .similarity-score.above-threshold {
+            color: #4CAF50;
         }
     </style>
 </head>

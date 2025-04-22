@@ -10,7 +10,8 @@ module.exports = {
         popup: './popup.js',
         'test-embeddings': './test-embeddings.js',
         'url-params': './url-params.js',
-        embeddings: './embeddings.js'
+        embeddings: './embeddings.js',
+        constants: './constants.js'
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
