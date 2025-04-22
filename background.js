@@ -1,5 +1,4 @@
 import { storePageEmbedding } from './embeddings.js';
-import { saveTweet } from './tweet-handler.js';
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -162,33 +161,105 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         try {
             // Get tweet content
             console.log('Executing script to get tweet content');
-            const [result] = await chrome.scripting.executeScript({
+            const [tweetData] = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                function: saveTweet
+                function: () => {
+                    // Find the closest tweet
+                    const tweetContainers = Array.from(document.querySelectorAll('article[data-testid="tweet"]'));
+                    if (tweetContainers.length === 0) {
+                        throw new Error('No tweets found on this page');
+                    }
+
+                    // Find the tweet container that's closest to the viewport center
+                    const viewportCenter = {
+                        x: window.innerWidth / 2,
+                        y: window.innerHeight / 2
+                    };
+
+                    // Find the tweet container that's most visible in the viewport
+                    const visibleTweets = tweetContainers.filter(tweet => {
+                        const rect = tweet.getBoundingClientRect();
+                        return (
+                            rect.top >= 0 &&
+                            rect.left >= 0 &&
+                            rect.bottom <= window.innerHeight &&
+                            rect.right <= window.innerWidth
+                        );
+                    });
+
+                    // If we have visible tweets, find the one closest to the viewport center
+                    const tweetContainer = visibleTweets.length > 0
+                        ? visibleTweets.reduce((closest, tweet) => {
+                            const rect = tweet.getBoundingClientRect();
+                            const tweetCenter = {
+                                x: rect.left + rect.width / 2,
+                                y: rect.top + rect.height / 2
+                            };
+                            const closestRect = closest.getBoundingClientRect();
+                            const closestCenter = {
+                                x: closestRect.left + closestRect.width / 2,
+                                y: closestRect.top + closestRect.height / 2
+                            };
+                            
+                            const distanceToTweet = Math.sqrt(
+                                Math.pow(tweetCenter.x - viewportCenter.x, 2) +
+                                Math.pow(tweetCenter.y - viewportCenter.y, 2)
+                            );
+                            const distanceToClosest = Math.sqrt(
+                                Math.pow(closestCenter.x - viewportCenter.x, 2) +
+                                Math.pow(closestCenter.y - viewportCenter.y, 2)
+                            );
+                            
+                            return distanceToTweet < distanceToClosest ? tweet : closest;
+                        })
+                        : tweetContainers[0];
+
+                    // Extract tweet data
+                    const tweetText = tweetContainer.querySelector('[data-testid="tweetText"]')?.textContent || '';
+                    const authorName = tweetContainer.querySelector('[data-testid="User-Name"]')?.textContent || '';
+                    const authorHandle = tweetContainer.querySelector('[data-testid="User-Name"] a')?.textContent || '';
+                    const timestamp = tweetContainer.querySelector('time')?.getAttribute('datetime') || new Date().toISOString();
+                    const tweetLink = tweetContainer.querySelector('a[href*="/status/"]')?.href || window.location.href;
+                    const mediaContainer = tweetContainer.querySelector('[data-testid="tweetPhoto"]');
+                    const mediaUrl = mediaContainer?.querySelector('img')?.src || '';
+
+                    return {
+                        title: `Tweet by ${authorName}`,
+                        url: tweetLink,
+                        favicon: 'https://abs.twimg.com/favicons/twitter.ico',
+                        textContent: tweetText,
+                        excerpt: `Tweet by ${authorHandle}: ${tweetText}`,
+                        timestamp: new Date(timestamp).getTime(),
+                        type: 'tweet',
+                        author: authorName,
+                        handle: authorHandle,
+                        mediaUrl: mediaUrl
+                    };
+                }
             });
 
-            console.log('Script execution result:', result);
+            console.log('Script execution result:', tweetData);
 
-            if (result && result.result) {
-                const tweetData = result.result;
-                console.log('Processing tweet data:', tweetData);
+            if (tweetData && tweetData.result) {
+                const tweet = tweetData.result;
+                console.log('Processing tweet data:', tweet);
                 
                 // Generate unique ID
-                tweetData.id = 'tweet_' + Date.now();
+                tweet.id = 'tweet_' + Date.now();
                 
                 // Get existing pages
                 const { savedPages = [] } = await chrome.storage.local.get(['savedPages']);
                 console.log('Current saved pages:', savedPages.length);
                 
                 // Add new tweet
-                savedPages.push(tweetData);
+                savedPages.push(tweet);
                 
                 // Save to storage
                 await chrome.storage.local.set({ savedPages });
                 console.log('Saved tweet to storage');
                 
                 // Generate and store embedding
-                await storePageEmbedding(tweetData.id, tweetData.textContent || tweetData.excerpt);
+                await storePageEmbedding(tweet.id, tweet.textContent || tweet.excerpt);
                 console.log('Generated and stored embedding');
                 
                 // Show success notification
@@ -314,7 +385,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                         }, 300);
                     }, 1500);
                 },
-                args: ['Error saving tweet', 'error']
+                args: ['Failed to save tweet. Please try again.', 'error']
             });
         }
     } else if (info.menuItemId === 'savePage') {
