@@ -195,8 +195,38 @@ async function semanticSearch(query, pages, topK = 5) {
 
 // Clear all embeddings
 async function clearEmbeddings() {
-    embeddings.clear();
-    await chrome.storage.local.remove(['embeddings']);
+    try {
+        // Clear in-memory embeddings
+        embeddings.clear();
+        
+        // Clear storage embeddings
+        await chrome.storage.local.remove(['embeddings']);
+        
+        console.log('Cleared all embeddings from memory and storage');
+    } catch (error) {
+        console.error('Error clearing embeddings:', error);
+    }
+}
+
+// Clear specific embedding
+async function clearEmbedding(pageId) {
+    try {
+        // Remove from in-memory map
+        embeddings.delete(pageId);
+        
+        // Get current embeddings from storage
+        const result = await chrome.storage.local.get(['embeddings']);
+        if (result.embeddings) {
+            // Remove the specific embedding
+            delete result.embeddings[pageId];
+            // Save back to storage
+            await chrome.storage.local.set({ embeddings: result.embeddings });
+        }
+        
+        console.log('Cleared embedding for page:', pageId);
+    } catch (error) {
+        console.error('Error clearing embedding:', error);
+    }
 }
 
 // Initialize embeddings on load
@@ -209,5 +239,6 @@ export {
     semanticSearch,
     storePageEmbedding,
     clearEmbeddings,
+    clearEmbedding,
     embeddings
 }; 

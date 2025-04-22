@@ -1,4 +1,4 @@
-import { storePageEmbedding, semanticSearch, clearEmbeddings, generateEmbedding, cosineSimilarity } from './embeddings.js';
+import { storePageEmbedding, semanticSearch, clearEmbeddings, clearEmbedding, generateEmbedding, cosineSimilarity } from './embeddings.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     const pageList = document.getElementById('pageList');
@@ -7,9 +7,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const similarityList = document.getElementById('similarityList');
     const debugPanel = document.getElementById('debugPanel');
     
+    // Show loading state
+    function showLoading() {
+        pageList.innerHTML = '<div class="loading">Loading pages...</div>';
+    }
+    
     // Load saved pages
     async function loadSavedPages() {
         try {
+            showLoading();
+            
             const result = await chrome.storage.local.get(['savedPages']);
             const savedPages = result.savedPages || [];
             
@@ -27,15 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 await chrome.storage.local.set({ savedPages });
             }
             
-            // Generate embeddings for all pages
+            // Display pages immediately
+            displayPages(savedPages);
+            
+            // Generate embeddings in the background
             for (const page of savedPages) {
                 const text = page.excerpt || page.textContent || '';
                 if (text) {
-                    await storePageEmbedding(page.id, text);
+                    storePageEmbedding(page.id, text).catch(error => {
+                        console.error('Error storing embedding:', error);
+                    });
                 }
             }
-            
-            displayPages(savedPages);
         } catch (error) {
             console.error('Error loading saved pages:', error);
             displayPages([]);
@@ -71,21 +81,24 @@ document.addEventListener('DOMContentLoaded', function() {
     pageList.addEventListener('click', function(event) {
         const target = event.target;
         
+        // Handle delete button click
+        if (target.closest('.delete-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            const deleteBtn = target.closest('.delete-btn');
+            const pageId = deleteBtn.getAttribute('data-page-id');
+            if (pageId) {
+                deletePage(pageId);
+            }
+            return;
+        }
+        
         // Handle page card click
         if (target.closest('.page-card')) {
             const card = target.closest('.page-card');
             const url = card.getAttribute('data-url');
             if (url) {
                 window.open(url, '_blank');
-            }
-        }
-        
-        // Handle delete button click
-        if (target.closest('.delete-btn')) {
-            const deleteBtn = target.closest('.delete-btn');
-            const pageId = deleteBtn.getAttribute('data-page-id');
-            if (pageId) {
-                deletePage(pageId);
             }
         }
     });
@@ -97,7 +110,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const savedPages = result.savedPages || [];
             const updatedPages = savedPages.filter(page => page.id !== pageId);
             
+            // Remove the embedding for the deleted page
+            await clearEmbedding(pageId);
+            
+            // Save the updated pages
             await chrome.storage.local.set({savedPages: updatedPages});
+            
+            // Regenerate embeddings for remaining pages
             await loadSavedPages();
         } catch (error) {
             console.error('Error deleting page:', error);
