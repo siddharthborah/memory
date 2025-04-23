@@ -104,8 +104,26 @@ function saveCurrentPage(callback) {
                 chrome.storage.local.get(['savedPages'], function(result) {
                     const savedPages = result.savedPages || [];
                     
-                    // Add new page data
-                    savedPages.push(response);
+                    // Check if the page already exists (by URL)
+                    const existingPageIndex = savedPages.findIndex(page => page.url === response.url);
+                    
+                    if (existingPageIndex !== -1) {
+                        // Update timestamp of existing page
+                        savedPages[existingPageIndex].timestamp = new Date().toISOString();
+                        console.log('Updated timestamp for existing page:', response.url);
+                    } else {
+                        // Add new page data
+                        response.id = 'page_' + Date.now();
+                        savedPages.push(response);
+                        
+                        // Generate and store embedding for new page
+                        const text = response.excerpt || response.textContent || '';
+                        if (text) {
+                            storePageEmbedding(response.id, text).catch(error => {
+                                console.error('Error storing embedding:', error);
+                            });
+                        }
+                    }
                     
                     // Save updated data
                     chrome.storage.local.set({savedPages: savedPages}, function() {
@@ -235,23 +253,31 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 const tweet = tweetData.result;
                 console.log('Processing tweet data:', tweet);
                 
-                // Generate unique ID
-                tweet.id = 'tweet_' + Date.now();
-                
                 // Get existing pages
                 const { savedPages = [] } = await chrome.storage.local.get(['savedPages']);
                 console.log('Current saved pages:', savedPages.length);
                 
-                // Add new tweet
-                savedPages.push(tweet);
+                // Check if the tweet already exists (by URL)
+                const existingTweetIndex = savedPages.findIndex(page => page.url === tweet.url);
+                
+                if (existingTweetIndex !== -1) {
+                    // Update timestamp of existing tweet
+                    savedPages[existingTweetIndex].timestamp = new Date().toISOString();
+                    console.log('Updated timestamp for existing tweet:', tweet.url);
+                } else {
+                    // Generate unique ID for new tweet
+                    tweet.id = 'tweet_' + Date.now();
+                    // Add new tweet
+                    savedPages.push(tweet);
+                    
+                    // Generate and store embedding for new tweet
+                    await storePageEmbedding(tweet.id, tweet.textContent || tweet.excerpt);
+                    console.log('Generated and stored embedding');
+                }
                 
                 // Save to storage
                 await chrome.storage.local.set({ savedPages });
-                console.log('Saved tweet to storage');
-                
-                // Generate and store embedding
-                await storePageEmbedding(tweet.id, tweet.textContent || tweet.excerpt);
-                console.log('Generated and stored embedding');
+                console.log('Saved/updated tweet in storage');
                 
                 // Show success notification
                 await chrome.scripting.executeScript({
