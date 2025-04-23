@@ -83,14 +83,19 @@ function startAutoRememberTimer() {
         clearTimeout(autoRememberTimeout);
     }
     
-    // Set new timeout for 10 seconds
-    autoRememberTimeout = setTimeout(() => {
-        chrome.runtime.sendMessage({action: "savePage"}, function(response) {
-            if (response && response.success) {
-                console.log('Page auto-remembered successfully');
-            }
-        });
-    }, 10000);
+    // Get the configured delay
+    chrome.storage.sync.get(['autoRememberDelay'], function(result) {
+        const delay = (result.autoRememberDelay || 10) * 1000; // Convert to milliseconds
+        
+        // Set new timeout using configured delay
+        autoRememberTimeout = setTimeout(() => {
+            chrome.runtime.sendMessage({action: "savePage"}, function(response) {
+                if (response && response.success) {
+                    console.log('Page auto-remembered successfully');
+                }
+            });
+        }, delay);
+    });
 }
 
 // Handle tab visibility changes

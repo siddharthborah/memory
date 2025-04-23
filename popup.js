@@ -93,13 +93,38 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.runtime.openOptionsPage();
     });
 
-    // Load auto-remember setting
-    chrome.storage.sync.get(['autoRemember'], function(result) {
-        document.getElementById('autoRemember').checked = result.autoRemember || false;
+    // Load auto-remember settings
+    chrome.storage.sync.get(['autoRemember', 'autoRememberDelay'], function(result) {
+        const autoRememberCheckbox = document.getElementById('autoRemember');
+        const autoRememberDelay = document.getElementById('autoRememberDelay');
+        
+        autoRememberCheckbox.checked = result.autoRemember || false;
+        autoRememberDelay.value = result.autoRememberDelay || 10;
+        autoRememberDelay.disabled = !autoRememberCheckbox.checked;
     });
 
-    // Save auto-remember setting when changed
+    // Save auto-remember settings when changed
     document.getElementById('autoRemember').addEventListener('change', function(e) {
-        chrome.storage.sync.set({ autoRemember: e.target.checked });
+        const delay = document.getElementById('autoRememberDelay');
+        delay.disabled = !e.target.checked;
+        
+        chrome.storage.sync.set({ 
+            autoRemember: e.target.checked,
+            autoRememberDelay: parseInt(delay.value, 10)
+        });
+    });
+
+    // Handle delay input changes
+    document.getElementById('autoRememberDelay').addEventListener('change', function(e) {
+        // Ensure minimum value of 10
+        let value = parseInt(e.target.value, 10);
+        if (value < 10) {
+            value = 10;
+            e.target.value = '10';
+        }
+        
+        if (document.getElementById('autoRemember').checked) {
+            chrome.storage.sync.set({ autoRememberDelay: value });
+        }
     });
 }); 

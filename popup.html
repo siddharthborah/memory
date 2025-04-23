@@ -5,12 +5,48 @@
     <title>Memory</title>
     <style>
         body {
-            width: 220px;
-            padding: 10px;
+            width: 280px;
+            margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            position: relative;
-            min-height: 100px;
+            color: #333;
         }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            background: #fff;
+        }
+
+        .logo {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            flex-grow: 1;
+        }
+
+        .container {
+            padding: 16px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 12px 0;
+        }
+
+        .button-container {
+            margin-bottom: 16px;
+        }
+
         button {
             width: 100%;
             padding: 8px 40px 8px 8px;
@@ -18,7 +54,7 @@
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.2s;
@@ -28,9 +64,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
         .shortcut {
             position: absolute;
             right: 8px;
@@ -40,81 +78,63 @@
             font-size: 12px;
             padding-left: 8px;
         }
-        #savedPages {
-            margin-top: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .page-item {
-            border: 1px solid #ddd;
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 4px;
-        }
-        .page-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .page-url {
-            color: #666;
-            font-size: 0.9em;
-            word-break: break-all;
-        }
-        /* Toast styles */
-        .toast-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            pointer-events: none;
-        }
-        .toast {
-            background-color: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            text-align: center;
-            white-space: nowrap;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .toast.success {
-            background-color: #4CAF50;
-        }
-        .toast.error {
-            background-color: #f44336;
-        }
+
         .settings-container {
-            margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid #eee;
         }
+
         .setting-item {
             display: flex;
             align-items: center;
             font-size: 13px;
             color: #666;
-            cursor: pointer;
             padding: 4px 0;
+            gap: 4px;
         }
+
         .setting-item input[type="checkbox"] {
-            margin-right: 8px;
+            margin: 0;
+            margin-right: 4px;
         }
+
         .setting-label {
             user-select: none;
+            white-space: nowrap;
+        }
+
+        .delay-input {
+            width: 35px;
+            margin: 0 4px;
+            padding: 2px 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+            text-align: center;
+        }
+
+        .delay-input::-webkit-inner-spin-button,
+        .delay-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .delay-input:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <img src="icons/icon48.png" alt="Memory" class="logo">
+        <div class="title">Memory</div>
+    </div>
     <div class="container">
+        <div class="section-title">Quick Actions</div>
         <div class="button-container">
             <button id="savePage" class="action-button">
                 Remember This
@@ -126,9 +146,12 @@
             </button>
         </div>
         <div class="settings-container">
+            <div class="section-title">Settings</div>
             <label class="setting-item">
                 <input type="checkbox" id="autoRemember">
-                <span class="setting-label">Auto-remember after 10s</span>
+                <span class="setting-label">Auto-remember after</span>
+                <input type="number" id="autoRememberDelay" min="10" value="10" class="delay-input">
+                <span class="setting-label">sec</span>
             </label>
         </div>
     </div>
