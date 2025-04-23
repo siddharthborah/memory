@@ -92,4 +92,14 @@ document.addEventListener('DOMContentLoaded', function() {
     viewSavedButton.addEventListener('click', function() {
         chrome.runtime.openOptionsPage();
     });
+
+    // Load auto-remember setting
+    chrome.storage.sync.get(['autoRemember'], function(result) {
+        document.getElementById('autoRemember').checked = result.autoRemember || false;
+    });
+
+    // Save auto-remember setting when changed
+    document.getElementById('autoRemember').addEventListener('change', function(e) {
+        chrome.storage.sync.set({ autoRemember: e.target.checked });
+    });
 }); 

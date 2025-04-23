@@ -4,8 +4,8 @@
   "version": "1.0",
   "description": "Save and search web pages with semantic search",
   "permissions": [
-    "storage",
     "contextMenus",
+    "storage",
     "activeTab",
     "scripting"
   ],

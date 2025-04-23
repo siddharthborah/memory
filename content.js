@@ -65,6 +65,76 @@ function getMainImage() {
     return null;
 }
 
+let autoRememberTimeout;
+
+// Check if auto-remember is enabled and set up timer if needed
+function setupAutoRemember() {
+    chrome.storage.sync.get(['autoRemember'], function(result) {
+        if (result.autoRemember) {
+            startAutoRememberTimer();
+        }
+    });
+}
+
+// Function to start the auto-remember timer
+function startAutoRememberTimer() {
+    // Clear any existing timeout first
+    if (autoRememberTimeout) {
+        clearTimeout(autoRememberTimeout);
+    }
+    
+    // Set new timeout for 10 seconds
+    autoRememberTimeout = setTimeout(() => {
+        chrome.runtime.sendMessage({action: "savePage"}, function(response) {
+            if (response && response.success) {
+                console.log('Page auto-remembered successfully');
+            }
+        });
+    }, 10000);
+}
+
+// Handle tab visibility changes
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Clear timer when tab becomes inactive
+        if (autoRememberTimeout) {
+            clearTimeout(autoRememberTimeout);
+            autoRememberTimeout = null;
+        }
+    } else {
+        // Restart timer when tab becomes active again
+        chrome.storage.sync.get(['autoRemember'], function(result) {
+            if (result.autoRemember) {
+                startAutoRememberTimer();
+            }
+        });
+    }
+});
+
+// Call setupAutoRemember when the page loads and is visible
+if (!document.hidden) {
+    setupAutoRemember();
+}
+
+// Clear timeout if page is being unloaded
+window.addEventListener('beforeunload', () => {
+    if (autoRememberTimeout) {
+        clearTimeout(autoRememberTimeout);
+    }
+});
+
+// Listen for changes to auto-remember setting
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.autoRemember) {
+        if (changes.autoRemember.newValue && !document.hidden) {
+            startAutoRememberTimer();
+        } else if (autoRememberTimeout) {
+            clearTimeout(autoRememberTimeout);
+            autoRememberTimeout = null;
+        }
+    }
+});
+
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getPageContent") {

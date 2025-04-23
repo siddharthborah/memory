@@ -92,11 +92,46 @@
         .toast.error {
             background-color: #f44336;
         }
+        .settings-container {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+        .setting-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+        .setting-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .setting-label {
+            user-select: none;
+        }
     </style>
 </head>
 <body>
-    <button id="savePage">Remember Page<span class="shortcut">&#8984;M</span></button>
-    <button id="viewSaved">Memories<span class="shortcut">&#8984;J</span></button>
+    <div class="container">
+        <div class="button-container">
+            <button id="savePage" class="action-button">
+                Remember This
+                <span class="shortcut">⌘M</span>
+            </button>
+            <button id="viewSaved" class="action-button">
+                My Memories
+                <span class="shortcut">⌘J</span>
+            </button>
+        </div>
+        <div class="settings-container">
+            <label class="setting-item">
+                <input type="checkbox" id="autoRemember">
+                <span class="setting-label">Auto-remember after 10s</span>
+            </label>
+        </div>
+    </div>
     <div id="savedPages"></div>
     <div class="toast-container" id="toastContainer"></div>
     <script src="toast.js"></script>
