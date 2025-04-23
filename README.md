@@ -1,6 +1,6 @@
 # Memory - Chrome Extension
 
-A Chrome extension that helps you remember and search through web pages and tweets using semantic search.
+A Chrome extension that helps you remember and search through web pages and tweets using semantic search. Built with modern web technologies and powered by AI.
 
 ## Features
 
@@ -9,12 +9,15 @@ A Chrome extension that helps you remember and search through web pages and twee
 - Keyboard shortcuts for quick access
 - Debug panel for understanding search results
 - Modern, clean interface
+- Support for both text-based and semantic search
+- Automatic content extraction and summarization
+- Persistent storage of your memories
 
 ## Installation
 
 1. Clone this repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/memory.git
+git clone https://github.com/siddharthborah/memory.git
 cd memory
 ```
 
@@ -61,6 +64,12 @@ The extension uses:
   - Automatically bundles required WASM files during build
 - Chrome Storage API for persistence
 - Webpack for bundling
+- Transformers.js for AI model inference
+- Readability.js for content extraction
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Troubleshooting
 

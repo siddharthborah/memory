@@ -67,7 +67,7 @@
         
         .delete-btn {
             position: absolute;
-            top: 8px;
+            bottom: 8px;
             right: 8px;
             background: none;
             border: none;
@@ -75,6 +75,9 @@
             padding: 4px;
             opacity: 0.5;
             transition: opacity 0.2s;
+            z-index: 1;
+            display: flex;
+            align-items: center;
         }
         
         .delete-btn:hover {
@@ -82,9 +85,23 @@
         }
         
         .delete-icon {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             fill: #666;
+        }
+        
+        .page-thumbnail {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        
+        .page-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
         .page-header {
@@ -104,12 +121,6 @@
             width: 16px;
             height: 16px;
             margin-right: 8px;
-        }
-        
-        .page-content-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
         }
         
         .page-title {
@@ -145,6 +156,7 @@
             color: #999;
             margin-top: auto;
             padding-top: 8px;
+            padding-right: 28px;
             border-top: 1px solid #eee;
         }
         
@@ -307,6 +319,8 @@
             position: relative;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
         .tweet-card:hover {
@@ -314,10 +328,21 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
+        .tweet-card .page-thumbnail {
+            margin-bottom: 12px;
+            border-radius: 8px;
+        }
+
         .tweet-header {
             display: flex;
             align-items: center;
             margin-bottom: 12px;
+        }
+
+        .tweet-avatar {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
         }
 
         .tweet-author {
@@ -352,6 +377,10 @@
         .tweet-timestamp {
             font-size: 12px;
             color: #999;
+            margin-top: auto;
+            padding-top: 8px;
+            padding-right: 28px;
+            border-top: 1px solid #eee;
         }
 
         /* Adjust page list for time groups */

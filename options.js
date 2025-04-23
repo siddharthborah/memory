@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                                             </svg>
                                         </button>
+                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Tweet thumbnail" onerror="this.style.display='none'">` : ''}
                                         <div class="tweet-header">
                                             <img class="tweet-avatar" src="https://x.com/favicon.ico" alt="X">
                                             <div class="tweet-author">
@@ -149,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                                             </svg>
                                         </button>
+                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Page thumbnail" onerror="this.style.display='none'">` : ''}
                                         <div class="page-content-wrapper">
                                             <div class="page-header">
                                                 <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">

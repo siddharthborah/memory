@@ -31,6 +31,40 @@ function getPageContent() {
     };
 }
 
+// Function to get the main image from the page
+function getMainImage() {
+    // Try to get Open Graph image first
+    const ogImage = document.querySelector('meta[property="og:image"]')?.content;
+    if (ogImage) return ogImage;
+
+    // Try to get Twitter card image
+    const twitterImage = document.querySelector('meta[name="twitter:image"]')?.content;
+    if (twitterImage) return twitterImage;
+
+    // Try to get the largest image from the page
+    const images = Array.from(document.getElementsByTagName('img'));
+    if (images.length > 0) {
+        // Filter out small images, icons, and tracking pixels
+        const validImages = images.filter(img => {
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+            return width > 100 && height > 100 && !img.src.includes('icon') && !img.src.includes('logo');
+        });
+
+        if (validImages.length > 0) {
+            // Sort by size and get the largest
+            validImages.sort((a, b) => {
+                const sizeA = (a.naturalWidth || a.width) * (a.naturalHeight || a.height);
+                const sizeB = (b.naturalWidth || b.width) * (b.naturalHeight || b.height);
+                return sizeB - sizeA;
+            });
+            return validImages[0].src;
+        }
+    }
+
+    return null;
+}
+
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getPageContent") {
@@ -89,6 +123,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 excerpt = firstParagraph ? firstParagraph.textContent.trim() : '';
             }
             
+            // Get the main image
+            const thumbnail = getMainImage();
+            
             // Send back basic page information
             sendResponse({
                 url: window.location.href,
@@ -96,7 +133,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 textContent: articleContent,
                 excerpt: excerpt,
                 timestamp: new Date().toISOString(),
-                favicon: faviconUrl
+                favicon: faviconUrl,
+                thumbnail: thumbnail
             });
         } catch (error) {
             console.error('Error in content script:', error);
@@ -115,7 +153,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     .trim(),
                 excerpt: document.body.querySelector('p')?.textContent.trim() || '',
                 timestamp: new Date().toISOString(),
-                favicon: ''
+                favicon: '',
+                thumbnail: getMainImage()
             });
         }
     }

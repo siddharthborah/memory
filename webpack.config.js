@@ -1,13 +1,11 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
-const { execSync } = require('child_process');
+const fs = require('fs');
 
-// Copy WASM files before webpack runs
-try {
-    execSync('node copy-wasm.js', { stdio: 'inherit' });
-} catch (error) {
-    console.error('Failed to copy WASM files:', error);
-    process.exit(1);
+// Check if WASM files exist in dist
+function wasmFilesExist() {
+    const wasmFiles = ['ort-wasm.wasm', 'ort-wasm-simd.wasm', 'ort-wasm-threaded.wasm'];
+    return wasmFiles.every(file => fs.existsSync(path.join(__dirname, 'dist', file)));
 }
 
 module.exports = {
@@ -48,12 +46,15 @@ module.exports = {
                 { from: '*.html', to: '[name][ext]' },
                 { from: 'images', to: 'images', noErrorOnMissing: true },
                 { from: 'icons', to: 'icons', noErrorOnMissing: true },
-                { from: '*.wasm', to: '[name][ext]' },
                 { from: 'models', to: 'models', noErrorOnMissing: true },
                 { from: 'readability.js', to: 'readability.js' },
                 { from: 'toast.js', to: 'toast.js' },
                 { from: 'transformers.js', to: 'transformers.js' },
-                { from: 'copy-wasm.js', to: 'copy-wasm.js' }
+                { from: 'copy-wasm.js', to: 'copy-wasm.js' },
+                // Only copy WASM files if they don't exist in dist
+                ...(wasmFilesExist() ? [] : [
+                    { from: '*.wasm', to: '[name][ext]' }
+                ])
             ]
         })
     ],
