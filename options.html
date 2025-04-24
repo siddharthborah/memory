@@ -51,13 +51,15 @@
         .page-card {
             background: white;
             border-radius: 8px;
-            padding: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 16px;
             position: relative;
-            cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
             display: flex;
             flex-direction: column;
+            max-height: 400px; /* Limit maximum height */
+            overflow: hidden; /* Hide overflow */
         }
         
         .page-card:hover {
@@ -102,19 +104,20 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Hide overflow */
         }
         
         .page-header {
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            flex: 1;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         
         .page-favicon {
             width: 16px;
             height: 16px;
-            margin-right: 8px;
+            object-fit: contain;
         }
         
         .tweet-avatar {
@@ -125,32 +128,38 @@
         
         .page-title {
             font-weight: 600;
-            font-size: 16px;
             color: #333;
+            font-size: 16px;
+            line-height: 1.4;
             margin: 0;
-            flex: 1;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            padding-right: 32px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
         
         .page-url {
             font-size: 12px;
             color: #666;
             margin-bottom: 8px;
-            word-break: break-all;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .page-excerpt {
             font-size: 14px;
-            color: #444;
+            color: #666;
+            line-height: 1.5;
             margin-bottom: 12px;
-            font-style: italic;
-            line-height: 1.4;
-            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 4; /* Show 4 lines by default */
+            -webkit-box-orient: vertical;
         }
-        
+
         .page-timestamp {
             font-size: 12px;
             color: #999;

@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                                             </svg>
                                         </button>
-                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Tweet thumbnail" onerror="this.style.display='none'">` : ''}
+                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Tweet thumbnail">` : ''}
                                         <div class="tweet-header">
                                             <img class="tweet-avatar" src="https://x.com/favicon.ico" alt="X">
                                             <div class="tweet-author">
@@ -150,10 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                                             </svg>
                                         </button>
-                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Page thumbnail" onerror="this.style.display='none'">` : ''}
+                                        ${page.thumbnail ? `<img class="page-thumbnail" src="${page.thumbnail}" alt="Page thumbnail">` : ''}
                                         <div class="page-content-wrapper">
                                             <div class="page-header">
-                                                <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon" onerror="this.style.display='none'">
+                                                <img class="page-favicon" src="${page.favicon || ''}" alt="Favicon">
                                                 <div class="page-title">${page.title}</div>
                                             </div>
                                             <div class="page-url">${page.url}</div>
@@ -175,33 +175,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         pageList.innerHTML = html;
+
+        // Add event listeners after updating the HTML
+        document.querySelectorAll('.page-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't open URL if clicking delete button
+                if (e.target.closest('.delete-btn')) {
+                    return;
+                }
+                const url = this.getAttribute('data-url');
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const pageId = this.getAttribute('data-page-id');
+                if (pageId) {
+                    deletePage(pageId);
+                }
+            });
+        });
+
+        // Handle image errors
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('error', function() {
+                this.style.display = 'none';
+            });
+        });
     }
-    
-    // Event delegation for page actions
-    pageList.addEventListener('click', function(event) {
-        const target = event.target;
-        
-        // Handle delete button click
-        if (target.closest('.delete-btn')) {
-            event.preventDefault();
-            event.stopPropagation();
-            const deleteBtn = target.closest('.delete-btn');
-            const pageId = deleteBtn.getAttribute('data-page-id');
-            if (pageId) {
-                deletePage(pageId);
-            }
-            return;
-        }
-        
-        // Handle page card click
-        if (target.closest('.page-card')) {
-            const card = target.closest('.page-card');
-            const url = card.getAttribute('data-url');
-            if (url) {
-                window.open(url, '_blank');
-            }
-        }
-    });
     
     // Delete a page
     async function deletePage(pageId) {
@@ -280,10 +286,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `).join('');
 
+            // Get text search results
+            const textResults = pages.filter(page => {
+                const title = page.title?.toLowerCase() || '';
+                const content = page.textContent?.toLowerCase() || '';
+                const excerpt = page.excerpt?.toLowerCase() || '';
+                const url = page.url?.toLowerCase() || '';
+                return title.includes(searchTerm) || 
+                       content.includes(searchTerm) || 
+                       excerpt.includes(searchTerm) || 
+                       url.includes(searchTerm);
+            });
+
             // Update threshold info in debug panel
             document.querySelector('.debug-info').innerHTML = `
                 <p>Showing similarity scores for current search term</p>
                 <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
+                <p>Total webpages: ${pages.length}</p>
+                <p>Text search results: ${textResults.length}</p>
+                <p>Semantic search results: ${similarities.length}</p>
+                <p>Combined results: ${new Set([...textResults, ...similarities.map(s => s.page)]).size}</p>
             `;
         } catch (error) {
             console.error('Error updating debug panel:', error);
