@@ -51,10 +51,7 @@ module.exports = {
                 { from: 'toast.js', to: 'toast.js' },
                 { from: 'transformers.js', to: 'transformers.js' },
                 { from: 'copy-wasm.js', to: 'copy-wasm.js' },
-                // Only copy WASM files if they don't exist in dist
-                ...(wasmFilesExist() ? [] : [
-                    { from: '*.wasm', to: '[name][ext]' }
-                ])
+                { from: '*.wasm', to: '[name][ext]' }
             ]
         })
     ],

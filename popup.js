@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const savePageButton = document.getElementById('savePage');
     const viewSavedButton = document.getElementById('viewSaved');
     const savedPagesDiv = document.getElementById('savedPages');
+    const useOpenAICheckbox = document.getElementById('useOpenAI');
+    const openAIContainer = document.getElementById('openAIContainer');
+    const openAIKeyInput = document.getElementById('openAIKey');
 
     // Function to show toast in the main window
     function showToast(message, type = 'success') {
@@ -125,6 +128,29 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (document.getElementById('autoRemember').checked) {
             chrome.storage.sync.set({ autoRememberDelay: value });
+        }
+    });
+
+    // Load OpenAI settings
+    chrome.storage.sync.get(['useOpenAI', 'openAIKey'], function(result) {
+        useOpenAICheckbox.checked = result.useOpenAI || false;
+        openAIKeyInput.value = result.openAIKey || '';
+        openAIContainer.style.display = useOpenAICheckbox.checked ? 'block' : 'none';
+    });
+
+    // Handle OpenAI checkbox change
+    useOpenAICheckbox.addEventListener('change', function(e) {
+        openAIContainer.style.display = e.target.checked ? 'block' : 'none';
+        chrome.storage.sync.set({ 
+            useOpenAI: e.target.checked,
+            openAIKey: e.target.checked ? openAIKeyInput.value : ''
+        });
+    });
+
+    // Handle OpenAI key input change
+    openAIKeyInput.addEventListener('change', function(e) {
+        if (useOpenAICheckbox.checked) {
+            chrome.storage.sync.set({ openAIKey: e.target.value });
         }
     });
 }); 

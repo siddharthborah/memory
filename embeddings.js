@@ -7,9 +7,9 @@ env.allowLocalModels = false;
 
 // Set up WASM paths
 const wasmPaths = {
-    'ort-wasm.wasm': chrome.runtime.getURL('ort-wasm.wasm'),
-    'ort-wasm-simd.wasm': chrome.runtime.getURL('ort-wasm-simd.wasm'),
-    'ort-wasm-threaded.wasm': chrome.runtime.getURL('ort-wasm-threaded.wasm')
+    'ort-wasm.wasm': 'ort-wasm.wasm',
+    'ort-wasm-simd.wasm': 'ort-wasm-simd.wasm',
+    'ort-wasm-threaded.wasm': 'ort-wasm-threaded.wasm'
 };
 
 // Initialize WASM backend
@@ -55,23 +55,24 @@ async function initializeModel() {
         return modelPromise;
     }
 
-    modelPromise = pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-        quantized: true,
-        progress_callback: null,
-        config: {
-            revision: 'default',
-            cache_dir: chrome.runtime.getURL('models'),
-            local_files_only: false,
-            use_worker: false,
-            use_cache: false
-        }
-    }).catch(error => {
+    try {
+        modelPromise = pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+            quantized: true,
+            progress_callback: null,
+            config: {
+                revision: 'default',
+                cache_dir: 'models',
+                local_files_only: false,
+                use_worker: false,
+                use_cache: false
+            }
+        });
+        return modelPromise;
+    } catch (error) {
         console.error('Error initializing model:', error);
         modelPromise = null; // Reset on error
         throw error;
-    });
-
-    return modelPromise;
+    }
 }
 
 // Generate embeddings for text

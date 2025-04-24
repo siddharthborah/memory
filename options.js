@@ -304,8 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
                 <p>Total webpages: ${pages.length}</p>
                 <p>Text search results: ${textResults.length}</p>
-                <p>Semantic search results: ${similarities.length}</p>
-                <p>Combined results: ${new Set([...textResults, ...similarities.map(s => s.page)]).size}</p>
+                <p>Semantic search results above threshold: ${similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).length}</p>
+                <p>Combined results: ${new Set([...textResults, ...similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).map(s => s.page)]).size}</p>
             `;
         } catch (error) {
             console.error('Error updating debug panel:', error);
