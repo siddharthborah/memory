@@ -1,5 +1,5 @@
 import { pipeline, env } from '@xenova/transformers';
-import { SEMANTIC_SIMILARITY_THRESHOLD } from './constants.js';
+import { SEMANTIC_SIMILARITY_THRESHOLD, OPENAI_EMBEDDING_MODEL } from './constants.js';
 
 // Configure environment for Chrome extension
 env.useBrowserCache = false;
@@ -75,6 +75,66 @@ async function initializeModel() {
     }
 }
 
+// Generate embeddings using OpenAI API
+async function generateOpenAIEmbedding(text) {
+    try {
+        const result = await chrome.storage.sync.get(['openAIKey']);
+        const apiKey = result.openAIKey;
+        
+        if (!apiKey) {
+            throw new Error('OpenAI API key not found');
+        }
+
+        // Log OpenAI API request
+        console.log('Making OpenAI API request:', {
+            textLength: text.length,
+            estimatedTokens: Math.ceil(text.length / 4),
+            timestamp: new Date().toISOString()
+        });
+
+        const response = await fetch('https://api.openai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                input: text,
+                model: OPENAI_EMBEDDING_MODEL
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('OpenAI API error:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorData
+            });
+            throw new Error(`OpenAI API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // Log successful response with more details
+        console.log('OpenAI API response:', {
+            usage: data.usage,
+            timestamp: new Date().toISOString(),
+            model: data.model,
+            data: {
+                object: data.data[0].object,
+                embedding_length: data.data[0].embedding.length,
+                index: data.data[0].index
+            }
+        });
+
+        return new Float32Array(data.data[0].embedding);
+    } catch (error) {
+        console.error('Error generating OpenAI embedding:', error);
+        throw error;
+    }
+}
+
 // Generate embeddings for text
 async function generateEmbedding(text) {
     try {
@@ -83,6 +143,15 @@ async function generateEmbedding(text) {
             return new Float32Array(384).fill(0);
         }
 
+        // Check if OpenAI embeddings are enabled
+        const result = await chrome.storage.sync.get(['useOpenAI']);
+        if (result.useOpenAI) {
+            console.log('Using OpenAI embeddings');
+            return await generateOpenAIEmbedding(text);
+        }
+
+        console.log('Using local embeddings');
+        // Use local model if OpenAI is not enabled
         const pipe = await initializeModel();
         const output = await pipe(text.substring(0, 512), {
             pooling: 'mean',
@@ -140,7 +209,7 @@ async function storePageEmbedding(pageId, text) {
 }
 
 // Search pages using semantic similarity
-async function semanticSearch(query, pages, topK = 5) {
+async function semanticSearch(query, pages, topK = 5, queryEmbedding = null) {
     if (!query || !pages || !Array.isArray(pages)) {
         console.error('Invalid input for semanticSearch:', { query, pages, topK });
         return [];
@@ -150,8 +219,11 @@ async function semanticSearch(query, pages, topK = 5) {
         console.log('Starting semantic search with query:', query);
         console.log('Number of pages to search:', pages.length);
         
-        const queryEmbedding = await generateEmbedding(query);
-        console.log('Generated query embedding:', queryEmbedding);
+        // Use provided query embedding or generate new one
+        const finalQueryEmbedding = queryEmbedding || await generateEmbedding(query);
+        if (!queryEmbedding) {
+            console.log('Generated query embedding:', finalQueryEmbedding);
+        }
         
         const results = [];
         
@@ -162,7 +234,7 @@ async function semanticSearch(query, pages, topK = 5) {
                 continue;
             }
             
-            const text = page.excerpt || page.textContent || '';
+            const text = page.text || page.excerpt || page.textContent || '';
             if (text) {
                 let pageEmbedding;
                 if (embeddings.has(page.id)) {
@@ -174,17 +246,17 @@ async function semanticSearch(query, pages, topK = 5) {
                     embeddings.set(page.id, pageEmbedding);
                 }
                 
-                const similarity = cosineSimilarity(queryEmbedding, pageEmbedding);
+                const similarity = cosineSimilarity(finalQueryEmbedding, pageEmbedding);
                 console.log(`Similarity for page ${page.id}:`, similarity);
-                results.push({ pageId: page.id, similarity, page });
+                results.push({ page, similarity });
             }
         }
         
         // Sort by similarity and filter
         const filteredResults = results
             .sort((a, b) => b.similarity - a.similarity)
-            .slice(0, topK)
-            .filter(result => result.similarity > SEMANTIC_SIMILARITY_THRESHOLD);
+            .filter(result => result.similarity >= SEMANTIC_SIMILARITY_THRESHOLD)
+            .slice(0, topK);
         
         console.log('Final filtered results:', filteredResults);
         

@@ -57,5 +57,8 @@ module.exports = {
     ],
     resolve: {
         extensions: ['.js']
+    },
+    optimization: {
+        minimize: false // Disable minification to avoid eval
     }
 }; 

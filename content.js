@@ -180,6 +180,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         .replace(/([a-z])([0-9])/g, '$1 $2') // Add space between letters and numbers
                         .replace(/([0-9])([A-Z])/g, '$1 $2') // Add space between numbers and capital letters
                         .trim(); // Remove leading/trailing whitespace
+
+                    // Get root URL
+                    const urlObj = new URL(window.location.href);
+                    const rootUrl = urlObj.hostname;
+
+                    // Combine title, URL, and content for better context
+                    const combinedContent = [
+                        article.title,
+                        `Source: ${rootUrl}`,
+                        articleContent
+                    ].filter(Boolean).join('\n\n');
+
+                    // Estimate tokens (roughly 4 chars per token) and limit to ~1000 tokens
+                    const maxChars = 4000; // ~1000 tokens
+                    articleContent = combinedContent.substring(0, maxChars);
+                    
+                    // Log token estimation
+                    const estimatedTokens = Math.ceil(articleContent.length / 4);
+                    console.log('Content token estimation:', {
+                        totalChars: articleContent.length,
+                        estimatedTokens,
+                        title: article.title,
+                        source: rootUrl
+                    });
                 }
             } catch (e) {
                 console.error('Error using Readability:', e);
@@ -196,6 +220,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 // Create a basic excerpt from the first paragraph
                 const firstParagraph = docClone.body.querySelector('p');
                 excerpt = firstParagraph ? firstParagraph.textContent.trim() : '';
+
+                // Get root URL
+                const urlObj = new URL(window.location.href);
+                const rootUrl = urlObj.hostname;
+
+                // Combine title, URL, and content
+                const combinedContent = [
+                    docClone.title,
+                    `Source: ${rootUrl}`,
+                    articleContent
+                ].filter(Boolean).join('\n\n');
+
+                // Estimate tokens (roughly 4 chars per token) and limit to ~1000 tokens
+                const maxChars = 4000; // ~1000 tokens
+                articleContent = combinedContent.substring(0, maxChars);
+                
+                // Log token estimation
+                const estimatedTokens = Math.ceil(articleContent.length / 4);
+                console.log('Content token estimation (fallback):', {
+                    totalChars: articleContent.length,
+                    estimatedTokens,
+                    title: docClone.title,
+                    source: rootUrl
+                });
             }
             
             // Get the main image

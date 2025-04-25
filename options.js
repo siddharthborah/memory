@@ -38,13 +38,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display pages immediately
             displayPages(savedPages);
             
-            // Generate embeddings in the background
+            // Only generate embeddings for pages that don't have them
+            const { embeddings: existingEmbeddings } = await chrome.storage.local.get(['embeddings']);
             for (const page of savedPages) {
-                const text = page.excerpt || page.textContent || '';
-                if (text) {
-                    storePageEmbedding(page.id, text).catch(error => {
-                        console.error('Error storing embedding:', error);
-                    });
+                if (!existingEmbeddings || !existingEmbeddings[page.id]) {
+                    const text = page.excerpt || page.textContent || '';
+                    if (text) {
+                        console.log('Generating new embedding for page:', page.id);
+                        storePageEmbedding(page.id, text).catch(error => {
+                            console.error('Error storing embedding:', error);
+                        });
+                    }
                 }
             }
         } catch (error) {
@@ -252,6 +256,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const queryEmbedding = await generateEmbedding(searchTerm);
             const similarities = [];
             
+            // Get stored embeddings
+            const { embeddings: storedEmbeddings } = await chrome.storage.local.get(['embeddings']);
+            
             for (const page of pages) {
                 const text = page.excerpt || page.textContent || '';
                 const title = page.title?.toLowerCase() || '';
@@ -266,8 +273,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                    url.includes(searchTerm);
 
                 if (text) {
-                    const embedding = await generateEmbedding(text);
-                    const similarity = cosineSimilarity(queryEmbedding, embedding);
+                    let pageEmbedding;
+                    if (storedEmbeddings && storedEmbeddings[page.id]) {
+                        // Use stored embedding
+                        pageEmbedding = new Float32Array(storedEmbeddings[page.id]);
+                    } else {
+                        // Generate new embedding only if not stored
+                        console.log('No stored embedding found for page:', page.id);
+                        pageEmbedding = await generateEmbedding(text);
+                        // Store the new embedding
+                        await storePageEmbedding(page.id, text);
+                    }
+                    
+                    const similarity = cosineSimilarity(queryEmbedding, pageEmbedding);
                     similarities.push({ page, similarity, hasTextMatch });
                 }
             }
@@ -299,6 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Update threshold info in debug panel
+            const openAISettings = await chrome.storage.sync.get(['useOpenAI']);
             document.querySelector('.debug-info').innerHTML = `
                 <p>Showing similarity scores for current search term</p>
                 <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
@@ -306,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>Text search results: ${textResults.length}</p>
                 <p>Semantic search results above threshold: ${similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).length}</p>
                 <p>Combined results: ${new Set([...textResults, ...similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).map(s => s.page)]).size}</p>
+                <p>Using OpenAI embeddings: ${openAISettings.useOpenAI ? 'Yes' : 'No'}</p>
             `;
         } catch (error) {
             console.error('Error updating debug panel:', error);
