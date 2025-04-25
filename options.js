@@ -65,7 +65,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Sort pages by timestamp (newest first)
-        pages.sort((a, b) => b.timestamp - a.timestamp);
+        pages.sort((a, b) => {
+            const timeA = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : a.timestamp;
+            const timeB = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : b.timestamp;
+            return timeB - timeA;
+        });
 
         // Group pages by time period
         const now = new Date();
@@ -246,98 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Update debug panel with similarity scores
-    async function updateDebugPanel(searchTerm, pages) {
-        if (!debugPanel.style.display || debugPanel.style.display === 'none') {
-            return;
-        }
-
-        try {
-            const queryEmbedding = await generateEmbedding(searchTerm);
-            const similarities = [];
-            
-            // Get stored embeddings
-            const { embeddings: storedEmbeddings } = await chrome.storage.local.get(['embeddings']);
-            
-            for (const page of pages) {
-                const text = page.excerpt || page.textContent || '';
-                const title = page.title?.toLowerCase() || '';
-                const content = page.textContent?.toLowerCase() || '';
-                const excerpt = page.excerpt?.toLowerCase() || '';
-                const url = page.url?.toLowerCase() || '';
-                
-                // Check for text match
-                const hasTextMatch = title.includes(searchTerm) || 
-                                   content.includes(searchTerm) || 
-                                   excerpt.includes(searchTerm) || 
-                                   url.includes(searchTerm);
-
-                if (text) {
-                    let pageEmbedding;
-                    if (storedEmbeddings && storedEmbeddings[page.id]) {
-                        // Use stored embedding
-                        pageEmbedding = new Float32Array(storedEmbeddings[page.id]);
-                    } else {
-                        // Generate new embedding only if not stored
-                        console.log('No stored embedding found for page:', page.id);
-                        pageEmbedding = await generateEmbedding(text);
-                        // Store the new embedding
-                        await storePageEmbedding(page.id, text);
-                    }
-                    
-                    const similarity = cosineSimilarity(queryEmbedding, pageEmbedding);
-                    similarities.push({ page, similarity, hasTextMatch });
-                }
-            }
-            
-            // Sort by similarity
-            similarities.sort((a, b) => b.similarity - a.similarity);
-            
-            // Update debug panel
-            similarityList.innerHTML = similarities.map(({ page, similarity, hasTextMatch }) => `
-                <div class="similarity-item">
-                    <div class="similarity-text ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${page.title.substring(0, 50)}...</div>
-                    <div class="similarity-info">
-                        <span class="text-match ${hasTextMatch ? 'match' : 'no-match'}">${hasTextMatch ? '✓' : '✗'}</span>
-                        <span class="similarity-score ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${similarity.toFixed(4)}</span>
-                    </div>
-                </div>
-            `).join('');
-
-            // Get text search results
-            const textResults = pages.filter(page => {
-                const title = page.title?.toLowerCase() || '';
-                const content = page.textContent?.toLowerCase() || '';
-                const excerpt = page.excerpt?.toLowerCase() || '';
-                const url = page.url?.toLowerCase() || '';
-                return title.includes(searchTerm) || 
-                       content.includes(searchTerm) || 
-                       excerpt.includes(searchTerm) || 
-                       url.includes(searchTerm);
-            });
-
-            // Update threshold info in debug panel
-            const openAISettings = await chrome.storage.sync.get(['useOpenAI']);
-            document.querySelector('.debug-info').innerHTML = `
-                <p>Showing similarity scores for current search term</p>
-                <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
-                <p>Total webpages: ${pages.length}</p>
-                <p>Text search results: ${textResults.length}</p>
-                <p>Semantic search results above threshold: ${similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).length}</p>
-                <p>Combined results: ${new Set([...textResults, ...similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).map(s => s.page)]).size}</p>
-                <p>Using OpenAI embeddings: ${openAISettings.useOpenAI ? 'Yes' : 'No'}</p>
-            `;
-        } catch (error) {
-            console.error('Error updating debug panel:', error);
-            similarityList.innerHTML = '<div class="similarity-item">Error calculating similarities</div>';
-        }
-    }
-    
     // Search functionality
     let searchTimeout;
     searchBox.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        console.log('Search term:', searchTerm);
+        const searchTerm = e.target.value.trim();
         
         // Clear previous timeout
         if (searchTimeout) {
@@ -347,26 +263,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set new timeout for search
         searchTimeout = setTimeout(async () => {
             try {
-                if (searchTerm.length < 3) {
-                    console.log('Search term too short, showing all pages');
-                    // If search term is too short, show all pages
-                    const result = await chrome.storage.local.get(['savedPages']);
-                    const pages = result.savedPages || [];
-                    console.log('Number of saved pages:', pages.length);
-                    displayPages(pages);
-                    updateDebugPanel(searchTerm, pages);
+                // Get saved pages
+                const { savedPages = [] } = await chrome.storage.local.get(['savedPages']);
+                
+                if (!searchTerm) {
+                    displayPages(savedPages);
                     return;
                 }
                 
-                // Get all pages
-                const result = await chrome.storage.local.get(['savedPages']);
-                const savedPages = result.savedPages || [];
-                console.log('Number of pages to search:', savedPages.length);
+                // Generate query embedding once
+                const queryEmbedding = await generateEmbedding(searchTerm);
                 
-                // Update debug panel
-                updateDebugPanel(searchTerm, savedPages);
-                
-                // Perform text-based search
+                // Perform text search
                 const textResults = savedPages.filter(page => {
                     const title = page.title?.toLowerCase() || '';
                     const content = page.textContent?.toLowerCase() || '';
@@ -377,12 +285,12 @@ document.addEventListener('DOMContentLoaded', function() {
                            excerpt.includes(searchTerm) || 
                            url.includes(searchTerm);
                 });
-
+                
                 console.log('Text search found', textResults.length, 'results');
                 
-                // Perform semantic search
+                // Perform semantic search with the pre-generated embedding
                 console.log('Performing semantic search...');
-                const semanticResults = await semanticSearch(searchTerm, savedPages);
+                const semanticResults = await semanticSearch(searchTerm, savedPages, 5, queryEmbedding);
                 console.log('Semantic search results:', semanticResults.length);
 
                 // Combine and rank results
@@ -431,12 +339,103 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayPages([]);
                 }
                 
+                // Update debug panel with the same query embedding
+                await updateDebugPanel(searchTerm, savedPages, queryEmbedding);
+                
             } catch (error) {
                 console.error('Error performing search:', error);
                 displayPages([]);
             }
         }, 300);
     });
+
+    // Update debug panel with similarity scores
+    async function updateDebugPanel(searchTerm, pages, queryEmbedding = null) {
+        if (!debugPanel.style.display || debugPanel.style.display === 'none') {
+            return;
+        }
+
+        try {
+            // Use provided query embedding or generate new one
+            const finalQueryEmbedding = queryEmbedding || await generateEmbedding(searchTerm);
+            const similarities = [];
+            
+            // Get stored embeddings
+            const { embeddings: storedEmbeddings } = await chrome.storage.local.get(['embeddings']);
+            
+            for (const page of pages) {
+                const text = page.excerpt || page.textContent || '';
+                const title = page.title?.toLowerCase() || '';
+                const content = page.textContent?.toLowerCase() || '';
+                const excerpt = page.excerpt?.toLowerCase() || '';
+                const url = page.url?.toLowerCase() || '';
+                
+                // Check for text match
+                const hasTextMatch = title.includes(searchTerm) || 
+                                   content.includes(searchTerm) || 
+                                   excerpt.includes(searchTerm) || 
+                                   url.includes(searchTerm);
+
+                if (text) {
+                    let pageEmbedding;
+                    if (storedEmbeddings && storedEmbeddings[page.id]) {
+                        // Use stored embedding
+                        pageEmbedding = new Float32Array(storedEmbeddings[page.id]);
+                    } else {
+                        // Generate new embedding only if not stored
+                        console.log('No stored embedding found for page:', page.id);
+                        pageEmbedding = await generateEmbedding(text);
+                        // Store the new embedding
+                        await storePageEmbedding(page.id, text);
+                    }
+                    
+                    const similarity = cosineSimilarity(finalQueryEmbedding, pageEmbedding);
+                    similarities.push({ page, similarity, hasTextMatch });
+                }
+            }
+            
+            // Sort by similarity
+            similarities.sort((a, b) => b.similarity - a.similarity);
+            
+            // Update debug panel
+            similarityList.innerHTML = similarities.map(({ page, similarity, hasTextMatch }) => `
+                <div class="similarity-item">
+                    <div class="similarity-text ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${page.title.substring(0, 50)}...</div>
+                    <div class="similarity-info">
+                        <span class="text-match ${hasTextMatch ? 'match' : 'no-match'}">${hasTextMatch ? '✓' : '✗'}</span>
+                        <span class="similarity-score ${similarity >= SEMANTIC_SIMILARITY_THRESHOLD ? 'above-threshold' : ''}">${similarity.toFixed(4)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Get text search results
+            const textResults = pages.filter(page => {
+                const title = page.title?.toLowerCase() || '';
+                const content = page.textContent?.toLowerCase() || '';
+                const excerpt = page.excerpt?.toLowerCase() || '';
+                const url = page.url?.toLowerCase() || '';
+                return title.includes(searchTerm) || 
+                       content.includes(searchTerm) || 
+                       excerpt.includes(searchTerm) || 
+                       url.includes(searchTerm);
+            });
+
+            // Update threshold info in debug panel
+            const openAISettings = await chrome.storage.sync.get(['useOpenAI']);
+            document.querySelector('.debug-info').innerHTML = `
+                <p>Showing similarity scores for current search term</p>
+                <p>Threshold: ${SEMANTIC_SIMILARITY_THRESHOLD} (bold items meet or exceed this threshold)</p>
+                <p>Total webpages: ${pages.length}</p>
+                <p>Text search results: ${textResults.length}</p>
+                <p>Semantic search results above threshold: ${similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).length}</p>
+                <p>Combined results: ${new Set([...textResults, ...similarities.filter(s => s.similarity >= SEMANTIC_SIMILARITY_THRESHOLD).map(s => s.page)]).size}</p>
+                <p>Using OpenAI embeddings: ${openAISettings.useOpenAI ? 'Yes' : 'No'}</p>
+            `;
+        } catch (error) {
+            console.error('Error updating debug panel:', error);
+            similarityList.innerHTML = '<div class="similarity-item">Error calculating similarities</div>';
+        }
+    }
 
     // Listen for storage changes
     chrome.storage.onChanged.addListener(function(changes, namespace) {
