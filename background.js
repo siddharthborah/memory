@@ -2,6 +2,11 @@ import { storePageEmbedding } from './embeddings.js';
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "ping") {
+        sendResponse({ status: "ready" });
+        return true;
+    }
+    
     if (request.action === "savePage") {
         saveCurrentPage(sendResponse);
         return true; // Required for async response

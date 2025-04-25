@@ -67,35 +67,69 @@ function getMainImage() {
 
 let autoRememberTimeout;
 
-// Check if auto-remember is enabled and set up timer if needed
-function setupAutoRemember() {
-    chrome.storage.sync.get(['autoRemember'], function(result) {
-        if (result.autoRemember) {
-            startAutoRememberTimer();
+// Function to check if extension is ready
+function isExtensionReady() {
+    return new Promise((resolve) => {
+        if (chrome.runtime && chrome.storage) {
+            resolve(true);
+        } else {
+            // Try to ping the background script
+            chrome.runtime.sendMessage({ action: "ping" }, (response) => {
+                resolve(!!response);
+            });
         }
     });
 }
 
-// Function to start the auto-remember timer
-function startAutoRememberTimer() {
-    // Clear any existing timeout first
-    if (autoRememberTimeout) {
-        clearTimeout(autoRememberTimeout);
-    }
-    
-    // Get the configured delay
-    chrome.storage.sync.get(['autoRememberDelay'], function(result) {
-        const delay = (result.autoRememberDelay || 10) * 1000; // Convert to milliseconds
+// Check if auto-remember is enabled and set up timer if needed
+async function setupAutoRemember() {
+    try {
+        const isReady = await isExtensionReady();
+        if (!isReady) {
+            console.error('Extension not ready');
+            return;
+        }
         
-        // Set new timeout using configured delay
-        autoRememberTimeout = setTimeout(() => {
-            chrome.runtime.sendMessage({action: "savePage"}, function(response) {
-                if (response && response.success) {
-                    console.log('Page auto-remembered successfully');
-                }
-            });
-        }, delay);
-    });
+        chrome.storage.sync.get(['autoRemember'], function(result) {
+            if (result.autoRemember) {
+                startAutoRememberTimer();
+            }
+        });
+    } catch (error) {
+        console.error('Error in setupAutoRemember:', error);
+    }
+}
+
+// Function to start the auto-remember timer
+async function startAutoRememberTimer() {
+    try {
+        const isReady = await isExtensionReady();
+        if (!isReady) {
+            console.error('Extension not ready');
+            return;
+        }
+        
+        // Clear any existing timeout first
+        if (autoRememberTimeout) {
+            clearTimeout(autoRememberTimeout);
+        }
+        
+        // Get the configured delay
+        chrome.storage.sync.get(['autoRememberDelay'], function(result) {
+            const delay = (result.autoRememberDelay || 10) * 1000; // Convert to milliseconds
+            
+            // Set new timeout using configured delay
+            autoRememberTimeout = setTimeout(() => {
+                chrome.runtime.sendMessage({action: "savePage"}, function(response) {
+                    if (response && response.success) {
+                        console.log('Page auto-remembered successfully');
+                    }
+                });
+            }, delay);
+        });
+    } catch (error) {
+        console.error('Error in startAutoRememberTimer:', error);
+    }
 }
 
 // Handle tab visibility changes
