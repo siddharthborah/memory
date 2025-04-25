@@ -128,18 +128,27 @@
         }
 
         .api-key-input {
-            width: 100%;
+            width: calc(100% - 18px);
             padding: 6px 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 13px;
             color: #666;
             margin-top: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+            letter-spacing: 1px;
         }
 
         .api-key-input:focus {
             outline: none;
             border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+
+        #openAIContainer {
+            width: 100%;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -152,7 +161,7 @@
         <div class="section-title">Quick Actions</div>
         <div class="button-container">
             <button id="savePage" class="action-button">
-                Remember This
+                Add to Memory
                 <span class="shortcut">⌘M</span>
             </button>
             <button id="viewSaved" class="action-button">
