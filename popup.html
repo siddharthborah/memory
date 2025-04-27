@@ -104,8 +104,8 @@
         }
 
         .delay-input {
-            width: 35px;
-            margin: 0 4px;
+            width: 30px;
+            margin: 0 2px;
             padding: 2px 4px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -125,6 +125,10 @@
         .delay-input:disabled {
             background-color: #f5f5f5;
             cursor: not-allowed;
+        }
+
+        .delay-label {
+            margin-left: 0;
         }
 
         .api-key-input {
@@ -150,6 +154,94 @@
             width: 100%;
             margin-top: 4px;
         }
+
+        .paused-domains-container {
+            margin-top: 8px;
+        }
+
+        .paused-domains-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+
+        .domain-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .domain-item button {
+            background: none;
+            border: none;
+            color: #666;
+            padding: 2px 6px;
+            font-size: 12px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .domain-item button:hover {
+            color: #d32f2f;
+            background: none;
+        }
+
+        .add-domain-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .domain-input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .add-domain-button {
+            padding: 6px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            width: auto;
+        }
+
+        .add-domain-button:hover {
+            background-color: #45a049;
+        }
+
+        .domain-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .sub-menu {
+            margin-left: 24px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+        .domain-box {
+            color: #666;
+            font-size: 13px;
+            flex-grow: 1;
+        }
+
+        .domain-checkbox {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -173,10 +265,14 @@
             <div class="section-title">Settings</div>
             <label class="setting-item">
                 <input type="checkbox" id="autoRemember">
-                <span class="setting-label">Auto-remember after</span>
+                <span class="setting-label">Auto add to memory after</span>
                 <input type="number" id="autoRememberDelay" min="10" value="10" class="delay-input">
-                <span class="setting-label">sec</span>
+                <span class="setting-label delay-label">sec</span>
             </label>
+            <div class="domain-toggle sub-menu">
+                <input type="checkbox" id="pauseCurrentDomain" class="domain-checkbox">
+                <span id="currentDomain" class="domain-box"></span>
+            </div>
             <label class="setting-item">
                 <input type="checkbox" id="useOpenAI">
                 <span class="setting-label">Use OpenAI Embeddings</span>

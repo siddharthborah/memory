@@ -153,4 +153,49 @@ document.addEventListener('DOMContentLoaded', function() {
             chrome.storage.sync.set({ openAIKey: e.target.value });
         }
     });
+
+    // Get current domain and check if it's paused
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs[0]) {
+            const url = new URL(tabs[0].url);
+            const currentDomain = url.hostname;
+            
+            // Display current domain
+            const domainElement = document.getElementById('currentDomain');
+            domainElement.textContent = currentDomain;
+            
+            // Check if extension is ready
+            if (chrome.runtime && chrome.storage) {
+                // Load paused domains and check if current domain is paused
+                chrome.storage.sync.get(['pausedDomains'], function(result) {
+                    const pausedDomains = result.pausedDomains || [];
+                    const isPaused = pausedDomains.includes(currentDomain);
+                    
+                    // Set checkbox state
+                    const pauseCheckbox = document.getElementById('pauseCurrentDomain');
+                    pauseCheckbox.checked = !isPaused; // Checked means enabled
+                    
+                    // Add change handler
+                    pauseCheckbox.addEventListener('change', function(e) {
+                        if (!e.target.checked) {
+                            // Add domain to paused list
+                            if (!pausedDomains.includes(currentDomain)) {
+                                pausedDomains.push(currentDomain);
+                                chrome.storage.sync.set({ pausedDomains });
+                            }
+                        } else {
+                            // Remove domain from paused list
+                            const updatedDomains = pausedDomains.filter(d => d !== currentDomain);
+                            chrome.storage.sync.set({ pausedDomains: updatedDomains });
+                        }
+                    });
+                });
+            } else {
+                console.error('Extension not ready');
+                // Disable the checkbox if extension is not ready
+                const pauseCheckbox = document.getElementById('pauseCurrentDomain');
+                pauseCheckbox.disabled = true;
+            }
+        }
+    });
 }); 

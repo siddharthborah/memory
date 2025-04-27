@@ -81,12 +81,37 @@ function isExtensionReady() {
     });
 }
 
-// Check if auto-remember is enabled and set up timer if needed
+// Function to check if the current domain is paused
+async function isDomainPaused() {
+    try {
+        const urlObj = new URL(window.location.href);
+        const currentDomain = urlObj.hostname;
+        
+        return new Promise((resolve) => {
+            chrome.storage.sync.get(['pausedDomains'], function(result) {
+                const pausedDomains = result.pausedDomains || [];
+                resolve(pausedDomains.includes(currentDomain));
+            });
+        });
+    } catch (error) {
+        console.error('Error checking paused domain:', error);
+        return false;
+    }
+}
+
+// Check if auto add to memory is enabled and set up timer if needed
 async function setupAutoRemember() {
     try {
         const isReady = await isExtensionReady();
         if (!isReady) {
             console.error('Extension not ready');
+            return;
+        }
+        
+        // Check if domain is paused
+        const isPaused = await isDomainPaused();
+        if (isPaused) {
+            console.log('Auto add to memory is paused for this domain');
             return;
         }
         
@@ -100,12 +125,19 @@ async function setupAutoRemember() {
     }
 }
 
-// Function to start the auto-remember timer
+// Function to start the auto add to memory timer
 async function startAutoRememberTimer() {
     try {
         const isReady = await isExtensionReady();
         if (!isReady) {
             console.error('Extension not ready');
+            return;
+        }
+        
+        // Check if domain is paused
+        const isPaused = await isDomainPaused();
+        if (isPaused) {
+            console.log('Auto add to memory is paused for this domain');
             return;
         }
         
@@ -122,7 +154,7 @@ async function startAutoRememberTimer() {
             autoRememberTimeout = setTimeout(() => {
                 chrome.runtime.sendMessage({action: "savePage"}, function(response) {
                     if (response && response.success) {
-                        console.log('Page auto-remembered successfully');
+                        console.log('Page auto added to memory successfully');
                     }
                 });
             }, delay);
@@ -162,7 +194,7 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-// Listen for changes to auto-remember setting
+// Listen for changes to auto add to memory setting
 chrome.storage.onChanged.addListener((changes) => {
     if (changes.autoRemember) {
         if (changes.autoRemember.newValue && !document.hidden) {
